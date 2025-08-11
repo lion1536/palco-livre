@@ -39,3 +39,20 @@ CREATE TABLE pedidos (
     FOREIGN KEY (usuario_id) REFERENCES login(usuario_id),
     FOREIGN KEY (compra_id) REFERENCES compras(compra_id)
 )
+
+CREATE TABLE sessions (
+    session_id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    token VARCHAR(500) NOT NULL,
+    data_criacao DATETIME NOT NULL,
+    FOREIGN KEY (usuario_id) REFERENCES login(usuario_id)
+);
+
+CREATE TABLE carrinho (
+    carrinho_id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    instrumento_id INT NOT NULL,
+    quantidade INT NOT NULL,
+    FOREIGN KEY (usuario_id) REFERENCES login(usuario_id),
+    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(instrumento_id)
+);
