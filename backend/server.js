@@ -270,9 +270,95 @@ app.get("/carrinho", authenticateToken, async (req, res) => {
   }
 });
 
-// Rota de teste básica
-app.get("/", (req, res) => {
-  res.send("Servidor funcionando!");
+app.get("/buscar", async (req, res) => {
+  try {
+    // Pega filtros da query da string
+    const { nome, categoria, marca } = req.query;
+
+    // Monta filtro dinâmico e parâmetros da consulta
+    let filtros = [];
+    let params = [];
+
+    if (nome) {
+      filtros.push("nome LIKE ?");
+      params.push(`%${nome}%`);
+    }
+    if (categoria) {
+      filtros.push("categoria = ?");
+      params.push(categoria);
+    }
+    if (marca) {
+      filtros.push("marca = ?");
+      params.push(marca);
+    }
+
+    const whereClause =
+      filtros.length > 0 ? "WHERE " + filtros.join(" AND ") : "";
+
+    const [rows] = await pool.query(
+      `SELECT * FROM instrumentos ${whereClause}`,
+      params
+    );
+
+    res.status(200).json({ resultados: rows });
+  } catch (error) {
+    console.error("Erro na busca GET:", error);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+app.post("/buscar", async (req, res) => {
+  try {
+    const { nome, categoria, marca, preco_min, preco_max } = req.body;
+
+    let filtros = [];
+    let params = [];
+
+    if (nome) {
+      filtros.push("nome LIKE ?");
+      params.push(`%${nome}%`);
+    }
+    if (categoria) {
+      filtros.push("categoria = ?");
+      params.push(categoria);
+    }
+    if (marca) {
+      filtros.push("marca = ?");
+      params.push(marca);
+    }
+
+    const precoMin = preco_min != null ? Number(preco_min) : null;
+    const precoMax = preco_max != null ? Number(preco_max) : null;
+
+    if (preco_min != null && isNaN(precoMin)) {
+      return res.status(400).json({ error: "preco_min inválido" });
+    }
+    if (preco_max != null && isNaN(precoMax)) {
+      return res.status(400).json({ error: "preco_max inválido" });
+    }
+
+    if (precoMin !== null) {
+      filtros.push("preco >= ?");
+      params.push(precoMin);
+    }
+    if (precoMax !== null) {
+      filtros.push("preco <= ?");
+      params.push(precoMax);
+    }
+
+    const whereClause =
+      filtros.length > 0 ? "WHERE " + filtros.join(" AND ") : "";
+
+    const [rows] = await pool.query(
+      `SELECT * FROM instrumentos ${whereClause}`,
+      params
+    );
+
+    res.status(200).json({ resultados: rows });
+  } catch (err) {
+    console.error("Erro na busca POST:", err.stack || err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
 });
 
 // Inicializa o servidor
