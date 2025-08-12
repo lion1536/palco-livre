@@ -1,0 +1,141 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
+
+.cabecalho {
+  background-color: hsl(231, 66%, 30%);
+  height: 10%;
+}
+body {
+  font-family: Lato, sans-serif;
+  margin: 0px;
+  background-color: hsl(0, 0%, 84%);
+  height: 100vh;
+  font-size: 20px;
+}
+#svgs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: 1.5rem;
+  padding-block: 0.75rem;
+}
+#dpscabe {
+  font-family: Lato, sans-serif;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  padding-inline: 4rem;
+  font-size: 1.2rem;
+  background-color: hsl(231, 100%, 40%);
+  color: white;
+}
+p {
+  margin: 0px;
+}
+#destaque {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 85%;
+}
+#fotodstq {
+  border: solid 0.2rem black;
+  border-radius: 1rem;
+}
+footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  background-color: hsl(231, 66%, 30%);
+  font-family: Lato, sans-serif;
+  color: white;
+  padding: 1.5rem;
+}
+.redes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.redes p {
+  text-align: center;
+}
+.modelos {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.modelos p {
+  text-align: center;
+}
+.center {
+  display: flex;
+  width: 85%;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.ajuda {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.ajuda p {
+  margin: 0.2rem;
+}
+#login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 85%;
+}
+#quadrado {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 35%;
+  height: 55%;
+  background-color: hsl(231, 66%, 30%);
+  color: white;
+  padding: 2rem;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 60%;
+}
+form:focus {
+  outline: none;
+}
+input {
+  border: none;
+  border-radius: 1rem;
+  margin: 1rem;
+  height: 2rem;
+  width: 90%;
+  padding-left: 1rem;
+}
+.forms {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+.Sociais {
+  border: none;
+  background-color: hsl(231, 66%, 30%);
+  color: white;
+}
+.submit {
+  font-family: Lato, sans-serif;
+  margin: 1rem;
+  border: none;
+  border-radius: 2rem;
+  height: 2rem;
+  width: 10rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
