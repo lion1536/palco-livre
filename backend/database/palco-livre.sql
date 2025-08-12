@@ -7,12 +7,12 @@ CREATE TABLE instrumentos (
     categoria VARCHAR(10) NOT NULL,
     marca VARCHAR(20) NOT NULL,
     descricao VARCHAR(100),
-    preco DEC NOT NULL
+    preco DECIMAL(10,2) NOT NULL
 );
 
 CREATE TABLE login (
     usuario_id INT PRIMARY KEY AUTO_INCREMENT,
-    email VARCHAR(20) NOT NULL,
+    email VARCHAR(100) NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
     data_criacao DATE NOT NULL,
     data_att DATE NOT NULL,
@@ -23,11 +23,11 @@ CREATE TABLE compras (
     compra_id INT PRIMARY KEY AUTO_INCREMENT,
     usuario_id INT NOT NULL,
     instrumento_id INT NOT NULL,
-    preco DEC NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
     forma_pagamento VARCHAR(20) NOT NULL,
     FOREIGN KEY (usuario_id) REFERENCES login(usuario_id),
-    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(instrumento_id),
-    FOREIGN KEY (preco) REFERENCES instrumentos(preco)
+    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(instrumento_id)
+    -- REMOVIDA FOREIGN KEY de preco
 );
 
 CREATE TABLE pedidos (
@@ -38,7 +38,7 @@ CREATE TABLE pedidos (
     status_pagamento VARCHAR(20) NOT NULL,
     FOREIGN KEY (usuario_id) REFERENCES login(usuario_id),
     FOREIGN KEY (compra_id) REFERENCES compras(compra_id)
-)
+);
 
 CREATE TABLE sessions (
     session_id INT PRIMARY KEY AUTO_INCREMENT,
