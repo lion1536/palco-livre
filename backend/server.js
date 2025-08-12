@@ -27,7 +27,7 @@ app.use(
       }
       return callback(null, true);
     },
-    methods: ["GET", "POST", "DELETE"],
+    methods: ["GET", "POST", "DELETE", "PUT"],
   })
 );
 
@@ -357,6 +357,346 @@ app.post("/buscar", async (req, res) => {
     res.status(200).json({ resultados: rows });
   } catch (err) {
     console.error("Erro na busca POST:", err.stack || err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Listar todos os instrumentos disponíveis
+app.get("/instrumentos", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM instrumentos");
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Erro ao buscar instrumentos:", error);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Buscar instrumento por ID
+app.get("/instrumentos/:id", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM instrumentos WHERE instrumento_id = ?",
+      [req.params.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Instrumento não encontrado." });
+    }
+    res.status(200).json(rows[0]);
+  } catch (err) {
+    console.error("Erro ao buscar instrumento:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Aidionar novo instrumento (protegida)
+app.post("/instrumentos", authenticateToken, async (req, res) => {
+  try {
+    const { nome, categoria, marca, descricao, preco, estoque } = req.body;
+
+    if (!nome || !categoria || !marca || !preco || estoque == null) {
+      return res
+        .status(400)
+        .json({ error: "Preencha todos os campos obrigatórios." });
+    }
+
+    const [result] = await pool.query(
+      "INSERT INTO instrumentos (nome, categoria, marca, descricao, preco, estoque) VALUES (?, ?, ?, ?, ?, ?)",
+      [nome, categoria, marca, descricao || null, preco, estoque]
+    );
+
+    res.status(201).json({
+      message: "Instrumento adicionado com sucesso!",
+      id: result.insertId,
+    });
+  } catch (error) {
+    console.error("Erro ao adicionar instrumento:", error);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Atualizar instrumento (protegida)
+app.put("/instrumentos/:id", authenticateToken, async (req, res) => {
+  try {
+    const { nome, categoria, marca, descricao, preco, estoque } = req.body;
+
+    const [result] = await pool.query(
+      "UPDATE instrumentos SET nome=?, categoria=?, marca=?, descricao=?, preco=?, estoque=? WHERE instrumento_id=?",
+      [nome, categoria, marca, descricao, preco, estoque, req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Instrumento não encontrado." });
+    }
+
+    res.status(200).json({ message: "Instrumento atualizado com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao atualizar instrumento:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Remover instrumento (protegida)
+app.delete("/instrumentos/:id", authenticateToken, async (req, res) => {
+  try {
+    const [result] = await pool.query(
+      "DELETE FROM instrumentos WHERE instrumento_id = ?",
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Instrumento não encontrado." });
+    }
+
+    res.status(200).json({ message: "Instrumento removido com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao remover instrumento:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Criar um novo pedido
+app.post("/pedidos", authenticateToken, async (req, res) => {
+  try {
+    const { compra_id, status_entrega, status_pagamento } = req.body;
+
+    if (!compra_id || !status_entrega || !status_pagamento) {
+      return res
+        .status(400)
+        .json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO pedidos (usuario_id, compra_id, status_entrega, status_pagamento) 
+       VALUES (?, ?, ?, ?)`,
+      [req.user.usuarioId, compra_id, status_entrega, status_pagamento]
+    );
+
+    res.status(201).json({
+      message: "Pedido criado com sucesso!",
+      pedido_id: result.insertId,
+    });
+  } catch (error) {
+    console.error("Erro ao criar pedido:", error);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Listar pedidos do usuário logado
+app.get("/pedidos", authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT p.*, c.* 
+       FROM pedidos p
+       JOIN compras c ON p.compra_id = c.compra_id
+       WHERE p.usuario_id = ?`,
+      [req.user.usuarioId]
+    );
+
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Erro ao listar pedidos:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Buscar detalhes de um pedido específico
+app.get("/pedidos/:id", authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT p.*, c.* 
+       FROM pedidos p
+       JOIN compras c ON p.compra_id = c.compra_id
+       WHERE p.pedido_id = ? AND p.usuario_id = ?`,
+      [req.params.id, req.user.usuarioId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Pedido não encontrado." });
+    }
+
+    res.status(200).json(rows[0]);
+  } catch (err) {
+    console.error("Erro ao buscar pedido:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Atualizar status do pedido (ex.: admin ou confirmação de pagamento)
+app.put("/pedidos/:id", authenticateToken, async (req, res) => {
+  try {
+    const { status_entrega, status_pagamento } = req.body;
+
+    if (!status_entrega && !status_pagamento) {
+      return res
+        .status(400)
+        .json({ error: "Informe pelo menos um status para atualizar." });
+    }
+
+    const campos = [];
+    const params = [];
+
+    if (status_entrega) {
+      campos.push("status_entrega = ?");
+      params.push(status_entrega);
+    }
+    if (status_pagamento) {
+      campos.push("status_pagamento = ?");
+      params.push(status_pagamento);
+    }
+
+    params.push(req.params.id, req.user.usuarioId);
+
+    const [result] = await pool.query(
+      `UPDATE pedidos SET ${campos.join(", ")} 
+       WHERE pedido_id = ? AND usuario_id = ?`,
+      params
+    );
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ error: "Pedido não encontrado ou sem permissão." });
+    }
+
+    res.status(200).json({ message: "Pedido atualizado com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao atualizar pedido:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Cancelar pedido (protegida)
+app.delete("/pedidos/:id", authenticateToken, async (req, res) => {
+  try {
+    const [result] = await pool.query(
+      `UPDATE pedidos 
+       SET status_entrega = 'Cancelado' 
+       WHERE pedido_id = ? AND usuario_id = ?`,
+      [req.params.id, req.user.usuarioId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ error: "Pedido não encontrado ou já cancelado." });
+    }
+
+    res.status(200).json({ message: "Pedido cancelado com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao cancelar pedido:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Criar pagamento para o pedido
+app.post("/pagamentos", authenticateToken, async (req, res) => {
+  try {
+    const { pedido_id, metodo, valor } = req.body;
+
+    if (!pedido_id || !metodo || !valor) {
+      return res
+        .status(400)
+        .json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    // Verifica se o pedido pertence ao usuário
+    const [pedido] = await pool.query(
+      "SELECT * FROM pedidos WHERE pedido_id = ? AND usuario_id = ?",
+      [pedido_id, req.user.usuarioId]
+    );
+
+    if (pedido.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "Pedido não encontrado ou sem permissão." });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO pagamentos (pedido_id, metodo, valor, status) 
+       VALUES (?, ?, ?, 'Pendente')`,
+      [pedido_id, metodo, valor]
+    );
+
+    res.status(201).json({
+      message: "Pagamento criado com sucesso!",
+      pagamento_id: result.insertId,
+    });
+  } catch (err) {
+    console.error("Erro ao criar pagamento:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Consultar pagamento
+app.get("/pagamentos/:id", authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT pg.*, p.usuario_id 
+       FROM pagamentos pg
+       JOIN pedidos p ON pg.pedido_id = p.pedido_id
+       WHERE pg.pagamento_id = ? AND p.usuario_id = ?`,
+      [req.params.id, req.user.usuarioId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Pagamento não encontrado." });
+    }
+
+    res.status(200).json(rows[0]);
+  } catch (err) {
+    console.error("Erro ao consultar pagamento:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Atualizar status do pagamento e refletir no pedido
+app.put("/pagamentos/:id", authenticateToken, async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: "Informe o novo status." });
+    }
+
+    // Atualiza o pagamento
+    const [pagamento] = await pool.query(
+      `SELECT * FROM pagamentos WHERE pagamento_id = ?`,
+      [req.params.id]
+    );
+
+    if (pagamento.length === 0) {
+      return res.status(404).json({ error: "Pagamento não encontrado." });
+    }
+
+    await pool.query(
+      `UPDATE pagamentos SET status = ? WHERE pagamento_id = ?`,
+      [status, req.params.id]
+    );
+
+    // Atualiza o status_pagamento do pedido
+    let statusPedido;
+    if (status.toLowerCase() === "aprovado") {
+      statusPedido = "Pago";
+    } else if (
+      status.toLowerCase() === "recusado" ||
+      status.toLowerCase() === "cancelado"
+    ) {
+      statusPedido = "Pagamento Cancelado";
+    } else {
+      statusPedido = "Pendente";
+    }
+
+    await pool.query(
+      `UPDATE pedidos SET status_pagamento = ? WHERE pedido_id = ?`,
+      [statusPedido, pagamento[0].pedido_id]
+    );
+
+    res.status(200).json({
+      message: "Status do pagamento e do pedido atualizados com sucesso!",
+    });
+  } catch (err) {
+    console.error("Erro ao atualizar pagamento:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });

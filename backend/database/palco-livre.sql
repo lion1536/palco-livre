@@ -56,3 +56,13 @@ CREATE TABLE carrinho (
     FOREIGN KEY (usuario_id) REFERENCES login(usuario_id),
     FOREIGN KEY (instrumento_id) REFERENCES instrumentos(instrumento_id)
 );
+
+CREATE TABLE pagamentos (
+    pagamento_id INT PRIMARY KEY AUTO_INCREMENT,
+    pedido_id INT NOT NULL,
+    metodo VARCHAR(20) NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'Pendente',
+    data_pagamento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(pedido_id)
+);
