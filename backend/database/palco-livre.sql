@@ -10,6 +10,14 @@ CREATE TABLE instrumentos (
     preco DECIMAL(10,2) NOT NULL
 );
 
+CREATE TABLE instrumento_imagens (
+    imagem_id INT PRIMARY KEY AUTO_INCREMENT,
+    instrumento_id INT NOT NULL,
+    caminho VARCHAR(255) NOT NULL,
+    principal BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(instrumento_id) ON DELETE CASCADE
+);
+
 CREATE TABLE login (
     usuario_id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(100) NOT NULL,

@@ -247,9 +247,11 @@ app.delete("/carrinho/:itemId", authenticateToken, async (req, res) => {
 app.get("/carrinho", authenticateToken, async (req, res) => {
   try {
     const [items] = await pool.query(
-      `SELECT c.carrinho_id, c.quantidade, i.nome, i.categoria, i.marca, i.descricao, i.preco
+      `SELECT c.carrinho_id, c.quantidade, i.nome, i.categoria, i.marca, i.descricao, i.preco,
+              img.caminho AS imagem_principal
        FROM carrinho c
        JOIN instrumentos i ON c.instrumento_id = i.instrumento_id
+       LEFT JOIN instrumento_imagens img ON i.instrumento_id = img.instrumento_id AND img.principal = TRUE
        WHERE c.usuario_id = ?`,
       [req.user.usuarioId]
     );
@@ -260,7 +262,6 @@ app.get("/carrinho", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
-
 app.get("/buscar", async (req, res) => {
   try {
     // Pega filtros da query da string
