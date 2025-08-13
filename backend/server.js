@@ -9,25 +9,20 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const IP_ADDRESS = process.env.IP_ADDRESS || "0.0.0.0";
-
-const allowedOrigins = ["http://localhost:3000"];
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Middleware para aceitar JSON
 app.use(express.json());
 
-// Configuração CORS
+// CORS para DEV (aceita qualquer origem sem crash)
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(new Error("CORS não permitido"), false);
-      }
-      return callback(null, true);
+    origin: (origin, callback) => {
+      // aceita qualquer origem, inclusive null (file://)
+      callback(null, true);
     },
-    methods: ["GET", "POST", "DELETE", "PUT"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
   })
 );
 
@@ -35,7 +30,7 @@ app.use(
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD?.replace(/"/g, ""),
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
   waitForConnections: true,
@@ -71,15 +66,13 @@ async function authenticateToken(req, res, next) {
   }
 }
 
-// Rota cadastro (protegida por token)
-app.post("/cadastro", authenticateToken, async (req, res) => {
+// Rota cadastro
+app.post("/cadastro", async (req, res) => {
   try {
     const { email, senha, endereco } = req.body;
 
-    if (!email || !senha || !endereco) {
-      return res
-        .status(400)
-        .json({ error: "Preencha todos os campos obrigatórios." });
+    if (!email || !senha) {
+      return res.status(400).json({ error: "Preencha email e senha." });
     }
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Email inválido." });
@@ -88,6 +81,7 @@ app.post("/cadastro", authenticateToken, async (req, res) => {
     const [existing] = await pool.query("SELECT * FROM login WHERE email = ?", [
       email,
     ]);
+
     if (existing.length > 0) {
       return res.status(409).json({ error: "Email já cadastrado." });
     }
@@ -95,22 +89,19 @@ app.post("/cadastro", authenticateToken, async (req, res) => {
     const senhaHash = await bcrypt.hash(senha, 10);
     const dataAtual = new Date();
 
-    const [result] = await pool.query(
-      "INSERT INTO login (email, senha_hash, data_criacao, data_att, endereco) VALUES (?, ?, ?, ?, ?)",
-      [email, senhaHash, dataAtual, dataAtual, endereco]
-    );
+    if (endereco) {
+      await pool.query(
+        "INSERT INTO login (email, senha_hash, data_criacao, data_att, endereco) VALUES (?, ?, ?, ?, ?)",
+        [email, senhaHash, dataAtual, dataAtual, endereco]
+      );
+    } else {
+      await pool.query(
+        "INSERT INTO login (email, senha_hash, data_criacao, data_att) VALUES (?, ?, ?, ?)",
+        [email, senhaHash, dataAtual, dataAtual]
+      );
+    }
 
-    const usuarioId = result.insertId;
-    const token = jwt.sign({ usuarioId, email }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    await pool.query(
-      "INSERT INTO sessions (usuario_id, token, data_criacao) VALUES (?, ?, ?)",
-      [usuarioId, token, dataAtual]
-    );
-
-    res.status(201).json({ message: "Usuário cadastrado com sucesso!", token });
+    res.status(201).json({ message: "Usuário cadastrado com sucesso!" });
   } catch (err) {
     console.error("Erro no cadastro:", err);
     res.status(500).json({ error: "Erro interno do servidor." });
@@ -158,7 +149,7 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign(
       { usuarioId: usuario.usuario_id, email: usuario.email },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "7d" }
     );
 
     const dataAtual = new Date();
@@ -702,6 +693,6 @@ app.put("/pagamentos/:id", authenticateToken, async (req, res) => {
 });
 
 // Inicializa o servidor
-app.listen(PORT, IP_ADDRESS, () => {
-  console.log(`Servidor está rodando no IP ${IP_ADDRESS} e porta ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
