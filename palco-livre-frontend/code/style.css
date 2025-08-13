@@ -136,9 +136,6 @@ input {
   border-radius: 2rem;
   height: 30px;
   width: 10rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 #palcolivre {
   height: 100%;
@@ -147,4 +144,10 @@ input {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+#cadastroForm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
