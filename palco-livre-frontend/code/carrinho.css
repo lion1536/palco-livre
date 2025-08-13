@@ -1,0 +1,64 @@
+/* Container principal do carrinho */
+.carrinho-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px;
+}
+
+/* Cada item do carrinho */
+.item-carrinho {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+/* Imagem do instrumento */
+.item-carrinho img {
+  border-radius: 5px;
+  margin-right: 15px;
+}
+
+/* Detalhes do item */
+.item-carrinho .detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Botão remover */
+.item-carrinho .remover {
+  background-color: #ff4d4d;
+  border: none;
+  padding: 5px 10px;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.item-carrinho .remover:hover {
+  background-color: #e60000;
+}
+
+/* Mensagem carrinho vazio */
+.carrinho-container p {
+  font-size: 16px;
+  color: #555;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  .item-carrinho {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-carrinho img {
+    margin-bottom: 10px;
+  }
+}

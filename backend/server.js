@@ -45,24 +45,18 @@ async function authenticateToken(req, res, next) {
   if (!token) return res.status(401).json({ error: "Token não fornecido" });
 
   try {
-    // Verifica se token está ativo na tabela sessions
     const [rows] = await pool.query("SELECT * FROM sessions WHERE token = ?", [
       token,
     ]);
     if (rows.length === 0)
       return res.status(403).json({ error: "Sessão inválida ou expirada" });
 
-    // Verifica JWT
-    try {
-      const user = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = user; // adiciona dados do usuário à requisição
-      next();
-    } catch (err) {
-      return res.status(403).json({ error: "Token inválido" });
-    }
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = { usuarioId: payload.usuarioId };
+    next();
   } catch (err) {
     console.error("Erro na autenticação:", err);
-    res.status(500).json({ error: "Erro interno no servidor" });
+    return res.status(403).json({ error: "Token inválido ou expirado" });
   }
 }
 
@@ -111,71 +105,52 @@ app.post("/cadastro", async (req, res) => {
 // Rota login (gera token)
 app.post("/login", async (req, res) => {
   try {
-    // Verifica se o corpo da requisição existe e tem email e senha
-    if (!req.body) {
-      return res.status(400).json({ error: "Corpo da requisição vazio." });
-    }
-
     const { email, senha } = req.body;
+    console.log("Login recebido:", email);
 
-    if (typeof email !== "string" || typeof senha !== "string") {
-      return res
-        .status(400)
-        .json({ error: "Email e senha devem ser strings." });
+    if (!email || !senha) {
+      return res.status(400).json({ error: "Campos obrigatórios" });
     }
 
-    if (!email.trim() || !senha.trim()) {
-      return res.status(400).json({ error: "Informe email e senha." });
-    }
-
-    // Busca usuário pelo email
     const [rows] = await pool.query("SELECT * FROM login WHERE email = ?", [
-      email.trim(),
+      email,
     ]);
 
     if (rows.length === 0) {
-      return res.status(401).json({ error: "Email ou senha inválidos." });
+      return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
     const usuario = rows[0];
 
-    // Compara senha
+    // bcrypt.compare precisa da hash correta
     const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
     if (!senhaValida) {
-      return res.status(401).json({ error: "Email ou senha inválidos." });
+      return res.status(401).json({ error: "Senha incorreta" });
     }
 
-    // Gera token JWT
     const token = jwt.sign(
       { usuarioId: usuario.usuario_id, email: usuario.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    const dataAtual = new Date();
+    // Salvar token na tabela sessions, data_criacao será automática
+    await pool.query("INSERT INTO sessions (usuario_id, token) VALUES (?, ?)", [
+      usuario.usuario_id,
+      token,
+    ]);
 
-    // Salva sessão no banco
-    await pool.query(
-      "INSERT INTO sessions (usuario_id, token, data_criacao) VALUES (?, ?, ?)",
-      [usuario.usuario_id, token, dataAtual]
-    );
-
-    // Retorna apenas dados essenciais do usuário e token
-    res.status(200).json({
-      message: "Login realizado com sucesso!",
-      usuario: {
-        id: usuario.usuario_id,
-        email: usuario.email,
-      },
+    res.json({
+      usuario: { id: usuario.usuario_id, email: usuario.email },
       token,
     });
   } catch (err) {
     console.error("Erro no login:", err);
-    res.status(500).json({ error: "Erro interno do servidor." });
+    res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
 
-// Rota adicionar item ao carrinho
+// Adicionar item ao carrinho
 app.post("/carrinho", authenticateToken, async (req, res) => {
   try {
     const { instrumentoId, quantidade } = req.body;
@@ -198,70 +173,54 @@ app.post("/carrinho", authenticateToken, async (req, res) => {
   }
 });
 
-// Rota remover item do carrinho
+// Remover item do carrinho
 app.delete("/carrinho/:itemId", authenticateToken, async (req, res) => {
   try {
-    const { itemId } = req.params;
-    const id = parseInt(itemId, 10);
-
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: "ID do item inválido." });
-    }
-
-    console.log("Usuário autenticado:", req.user);
-    console.log(
-      "Tentando deletar carrinho_id:",
-      id,
-      "do usuário:",
-      req.user.usuarioId
-    );
+    const id = parseInt(req.params.itemId, 10);
+    if (isNaN(id) || id <= 0)
+      return res.status(400).json({ error: "ID inválido." });
 
     const [rows] = await pool.query(
       "SELECT * FROM carrinho WHERE carrinho_id = ? AND usuario_id = ?",
       [id, req.user.usuarioId]
     );
 
-    console.log("SELECT rows:", rows);
-
-    if (rows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "Item não encontrado no seu carrinho." });
-    }
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Item não encontrado." });
 
     const [result] = await pool.query(
       "DELETE FROM carrinho WHERE carrinho_id = ? AND usuario_id = ?",
       [id, req.user.usuarioId]
     );
 
-    console.log("DELETE affectedRows:", result.affectedRows);
-
-    res.status(200).json({ message: "Item removido do carrinho com sucesso!" });
+    res.json({ message: "Item removido do carrinho com sucesso!" });
   } catch (err) {
-    console.error("Erro ao remover item do carrinho:", err);
+    console.error("Erro ao remover item:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
 
-// Rota para listar itens do carrinho (opcional)
+// Listar itens do carrinho
 app.get("/carrinho", authenticateToken, async (req, res) => {
   try {
     const [items] = await pool.query(
-      `SELECT c.carrinho_id, c.quantidade, i.nome, i.categoria, i.marca, i.descricao, i.preco,
+      `SELECT c.carrinho_id, c.quantidade, i.nome, i.preco,
               img.caminho AS imagem_principal
        FROM carrinho c
        JOIN instrumentos i ON c.instrumento_id = i.instrumento_id
-       LEFT JOIN instrumento_imagens img ON i.instrumento_id = img.instrumento_id AND img.principal = TRUE
+       LEFT JOIN instrumento_imagens img 
+            ON i.instrumento_id = img.instrumento_id AND img.principal = TRUE
        WHERE c.usuario_id = ?`,
       [req.user.usuarioId]
     );
 
-    res.status(200).json({ carrinho: items });
+    res.json({ carrinho: items });
   } catch (err) {
-    console.error("Erro ao listar itens do carrinho:", err);
+    console.error("Erro ao listar itens:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
+
 app.get("/buscar", async (req, res) => {
   try {
     // Pega filtros da query da string
