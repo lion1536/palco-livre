@@ -11,8 +11,11 @@
     <header class="cabecalho">
       <div id="svgs">
         <div id="buscar">
-          <button onclick="abrirBusca()">
-            ><svg
+          <button
+            onclick="abrirBusca()"
+            style="background-color: transparent; border: none"
+          >
+            <svg
               xmlns="http://www.w3.org/2000/svg"
               width="65"
               height="65"
@@ -46,7 +49,7 @@
         <a href="index.html"
           ><img src="../images/image.png" alt="" width="120" id="palcolivre"
         /></a>
-        <div>
+        <div id="semnome">
           <a href="login.html"
             ><img src="../images/profile-svgrepo-com (1).svg" alt="" width="50"
           /></a>
@@ -68,12 +71,10 @@
       <div><p>Teclas</p></div>
       <div><p>Percussão</p></div>
     </div>
-
-    <main>
-      <div id="instrumentos-container" class="instrumentos-container">
-        <!-- Os instrumentos serão carregados via JS -->
-      </div>
-    </main>
+    <div id="fundo"></div>
+    <div id="instrumentos-container" class="instrumentos-container">
+      <!-- Os instrumentos serão carregados via JS -->
+    </div>
 
     <footer>
       <div class="center">
