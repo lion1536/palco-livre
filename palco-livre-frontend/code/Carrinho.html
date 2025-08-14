@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Carrinho</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="carrinho.css" />
   </head>
   <body>
     <header class="cabecalho">
@@ -56,16 +57,14 @@
         </div>
       </div>
     </header>
-    <div id="cart">
+
+    <main id="cart">
       <h1>Carrinho</h1>
-      <div id="Carrinho">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+      <div id="Carrinho" class="carrinho-container">
+        <!-- Itens serão renderizados aqui -->
       </div>
-    </div>
+    </main>
+
     <footer>
       <div class="center">
         <div class="redes">
@@ -90,5 +89,81 @@
         </div>
       </div>
     </footer>
+
+    <script type="module">
+      import {
+        listarCarrinho,
+        adicionarAoCarrinho,
+        removerDoCarrinho,
+      } from "./carrinho.js";
+
+      const token = localStorage.getItem("token");
+      const container = document.getElementById("Carrinho");
+
+      // Função para listar itens do carrinho
+      async function mostrarCarrinho() {
+        try {
+          const itens = await listarCarrinho(token);
+          container.innerHTML = "";
+
+          if (itens.length === 0) {
+            container.innerHTML = "<p>Seu carrinho está vazio.</p>";
+            return;
+          }
+
+          itens.forEach((item) => {
+            const div = document.createElement("div");
+            div.classList.add("item-carrinho");
+            div.innerHTML = `
+        <img src="${item.imagem_principal || "../images/default.jpg"}" alt="${
+              item.nome
+            }" width="100" />
+        <div class="detalhes">
+          <p><strong>${item.nome}</strong></p>
+          <p>Quantidade: ${item.quantidade}</p>
+          <p>Preço: R$ ${item.preco}</p>
+          <button class="remover" data-id="${item.carrinho_id}">Remover</button>
+        </div>
+      `;
+            container.appendChild(div);
+          });
+
+          // Adiciona evento de remover
+          container.querySelectorAll(".remover").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              try {
+                await removerDoCarrinho(token, btn.dataset.id);
+                mostrarCarrinho();
+              } catch (err) {
+                alert("Erro ao remover item: " + err.message);
+              }
+            });
+          });
+        } catch (err) {
+          console.error("Erro ao listar carrinho:", err);
+          container.innerHTML = "<p>Não foi possível carregar o carrinho.</p>";
+        }
+      }
+
+      // Função para adicionar itens ao carrinho (para usar nos botões do catálogo)
+      export function setupAdicionarCarrinho() {
+        document.querySelectorAll(".btn-adicionar").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const instrumentoId = btn.dataset.id;
+            try {
+              await adicionarAoCarrinho(token, instrumentoId, 1);
+              mostrarCarrinho();
+            } catch (err) {
+              alert("Erro ao adicionar item: " + err.message);
+            }
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        mostrarCarrinho();
+        setupAdicionarCarrinho(); // ativa os botões de adicionar
+      });
+    </script>
   </body>
 </html>

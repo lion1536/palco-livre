@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const btnLogin = document.querySelector(".submit");
+  const btnLogin = document.getElementById("btnLogin");
+  if (!btnLogin) return console.error("Botão de login não encontrado!");
 
   btnLogin.addEventListener("click", async () => {
     const email = document.getElementById("email").value.trim();
@@ -20,11 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
 
       if (response.ok) {
+        localStorage.setItem("token", data.token);
         alert("Login realizado com sucesso!");
         console.log("Usuário logado:", data.usuario);
-        console.log("Token JWT:", data.token);
       } else {
-        alert("Erro no login:" + (data.error || "Erro desconhecido"));
+        alert("Erro no login: " + (data.error || "Erro desconhecido"));
       }
     } catch (error) {
       alert("Erro na conexão com o servidor: " + error.message);

@@ -59,6 +59,7 @@
         </div>
       </div>
     </header>
+
     <div id="dpscabe">
       <div><p>Cordas</p></div>
       <div><p>Sopro</p></div>
@@ -67,9 +68,13 @@
       <div><p>Teclas</p></div>
       <div><p>Percussão</p></div>
     </div>
-    <div id="destaque">
-      <img src="../images/download.jpg" alt="" id="fotodstq" />
-    </div>
+
+    <main>
+      <div id="instrumentos-container" class="instrumentos-container">
+        <!-- Os instrumentos serão carregados via JS -->
+      </div>
+    </main>
+
     <footer>
       <div class="center">
         <div class="redes">
@@ -94,5 +99,52 @@
         </div>
       </div>
     </footer>
+
+    <script type="module">
+      import { adicionarAoCarrinho } from "./carrinho.js";
+
+      const token = localStorage.getItem("token");
+      const container = document.getElementById("instrumentos-container");
+
+      // Exemplo de produtos (você pode buscar do backend depois)
+      const instrumentos = [
+        {
+          id: 1,
+          nome: "Saxofone Tenor",
+          preco: 7870,
+          imagem: "../images/download.jpg",
+        },
+      ];
+
+      function renderInstrumentos() {
+        container.innerHTML = "";
+        instrumentos.forEach((item) => {
+          const div = document.createElement("div");
+          div.classList.add("instrumento");
+          div.innerHTML = `
+          <img src="${item.imagem}" alt="${item.nome}" width="150" />
+          <p><strong>${item.nome}</strong></p>
+          <p>Preço: R$ ${item.preco}</p>
+          <button class="btn-adicionar" data-id="${item.id}">Adicionar ao Carrinho</button>
+        `;
+          container.appendChild(div);
+        });
+
+        // Eventos dos botões
+        container.querySelectorAll(".btn-adicionar").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const instrumentoId = btn.dataset.id;
+            try {
+              await adicionarAoCarrinho(token, instrumentoId, 1);
+              alert("Item adicionado ao carrinho!");
+            } catch (err) {
+              alert("Erro ao adicionar ao carrinho: " + err.message);
+            }
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", renderInstrumentos);
+    </script>
   </body>
 </html>
