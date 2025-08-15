@@ -197,11 +197,14 @@ input {
 }
 #instrumentos-container {
   display: grid;
+  position: relative;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   z-index: 1;
   width: 100%;
   height: 100%;
+  align-items: center;
+  justify-items: center;
 }
 main {
   display: flex;
@@ -221,12 +224,17 @@ main {
   justify-content: flex-end;
 }
 #fundo {
-  width: 100%;
-  height: 100%;
-  background: url(../images/sopro.png) left top no-repeat,
-    url(../images/violãocerto.jpg) right top no-repeat,
-    url(../images/batera.jpg) left bottom no-repeat,
-    url(../images/teclado.jpg) right bottom no-repeat;
+  position: relative;
+  background-image: url(../images/sopro.png), url(../images/violãocerto.jpg),
+    url(../images/batera.jpg), url(../images/teclado.jpg);
+
+  background-size: 50% 50%, 50% 50%, 50% 50%, 50% 50%;
+
+  background-position: top left, top right, bottom left, bottom right;
+
+  background-repeat: no-repeat;
+  height: 100vh;
+  margin: 0;
 }
 .imagemfundo {
   width: 100%;
@@ -236,4 +244,24 @@ main {
   border: none;
   border-radius: 1rem;
   height: 2rem;
+}
+.instrumento {
+  display: flex;
+  flex-direction: column;
+
+  background-color: hsl(0, 0%, 84%);
+  padding: 1rem;
+  border-radius: 1rem;
+  width: fit-content;
+  height: fit-content;
+}
+.instrumento button {
+  padding: 0.5rem;
+  border-radius: 1rem;
+  border: none;
+}
+.instrumento img {
+  width: 10rem;
+}
+@media (max-width: 320) {
 }
