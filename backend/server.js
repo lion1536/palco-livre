@@ -221,25 +221,24 @@ app.get("/carrinho", authenticateToken, async (req, res) => {
   }
 });
 
+// Rota GET /buscar
 app.get("/buscar", async (req, res) => {
   try {
-    // Pega filtros da query da string
     const { nome, categoria, marca } = req.query;
 
-    // Monta filtro dinâmico e parâmetros da consulta
     let filtros = [];
     let params = [];
 
     if (nome) {
-      filtros.push("nome LIKE ?");
+      filtros.push("i.nome COLLATE utf8mb4_general_ci LIKE ?");
       params.push(`%${nome}%`);
     }
     if (categoria) {
-      filtros.push("categoria = ?");
+      filtros.push("i.categoria COLLATE utf8mb4_general_ci = ?");
       params.push(categoria);
     }
     if (marca) {
-      filtros.push("marca = ?");
+      filtros.push("i.marca COLLATE utf8mb4_general_ci = ?");
       params.push(marca);
     }
 
@@ -247,17 +246,23 @@ app.get("/buscar", async (req, res) => {
       filtros.length > 0 ? "WHERE " + filtros.join(" AND ") : "";
 
     const [rows] = await pool.query(
-      `SELECT * FROM instrumentos ${whereClause}`,
+      `
+      SELECT i.*, im.caminho AS imagem
+      FROM instrumentos i
+      LEFT JOIN instrumento_imagens im
+        ON i.instrumento_id = im.instrumento_id AND im.principal = TRUE
+      ${whereClause}
+    `,
       params
     );
 
-    res.status(200).json({ resultados: rows });
-  } catch (error) {
-    console.error("Erro na busca GET:", error);
+    res.json({ resultados: rows });
+  } catch (err) {
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
 
+// Rota POST /buscar
 app.post("/buscar", async (req, res) => {
   try {
     const { nome, categoria, marca, preco_min, preco_max } = req.body;
@@ -266,34 +271,27 @@ app.post("/buscar", async (req, res) => {
     let params = [];
 
     if (nome) {
-      filtros.push("nome LIKE ?");
+      filtros.push("i.nome COLLATE utf8mb4_general_ci LIKE ?");
       params.push(`%${nome}%`);
     }
     if (categoria) {
-      filtros.push("categoria = ?");
+      filtros.push("i.categoria COLLATE utf8mb4_general_ci = ?");
       params.push(categoria);
     }
     if (marca) {
-      filtros.push("marca = ?");
+      filtros.push("i.marca COLLATE utf8mb4_general_ci = ?");
       params.push(marca);
     }
 
     const precoMin = preco_min != null ? Number(preco_min) : null;
     const precoMax = preco_max != null ? Number(preco_max) : null;
 
-    if (preco_min != null && isNaN(precoMin)) {
-      return res.status(400).json({ error: "preco_min inválido" });
-    }
-    if (preco_max != null && isNaN(precoMax)) {
-      return res.status(400).json({ error: "preco_max inválido" });
-    }
-
     if (precoMin !== null) {
-      filtros.push("preco >= ?");
+      filtros.push("i.preco >= ?");
       params.push(precoMin);
     }
     if (precoMax !== null) {
-      filtros.push("preco <= ?");
+      filtros.push("i.preco <= ?");
       params.push(precoMax);
     }
 
@@ -301,13 +299,18 @@ app.post("/buscar", async (req, res) => {
       filtros.length > 0 ? "WHERE " + filtros.join(" AND ") : "";
 
     const [rows] = await pool.query(
-      `SELECT * FROM instrumentos ${whereClause}`,
+      `
+      SELECT i.*, im.caminho AS imagem
+      FROM instrumentos i
+      LEFT JOIN instrumento_imagens im
+        ON i.instrumento_id = im.instrumento_id AND im.principal = TRUE
+      ${whereClause}
+      `,
       params
     );
 
-    res.status(200).json({ resultados: rows });
+    res.json({ resultados: rows });
   } catch (err) {
-    console.error("Erro na busca POST:", err.stack || err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
