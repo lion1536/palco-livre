@@ -74,6 +74,65 @@
       </div>
     </main>
 
+    <!-- Main / Busca -->
+    <main>
+      <div id="busca">
+        <div id="filtros" class="filtros-container">
+          <!-- Input de busca -->
+          <input
+            type="text"
+            id="input-nome"
+            placeholder="Buscar instrumento..."
+          />
+
+          <!-- Filtros como botões -->
+          <div id="filtros-categoria">
+            <p>Categoria:</p>
+            <button class="filtro" data-categoria="Cordas">Cordas</button>
+            <button class="filtro" data-categoria="Sopro">Sopro</button>
+            <button class="filtro" data-categoria="Elétricos">Elétricos</button>
+            <button class="filtro" data-categoria="Acessórios">
+              Acessórios
+            </button>
+            <button class="filtro" data-categoria="Teclas">Teclas</button>
+            <button class="filtro" data-categoria="Percussão">Percussão</button>
+          </div>
+
+          <div id="filtros-preco">
+            <p>Preço:</p>
+            <button
+              class="filtro-preco"
+              data-preco-min="0"
+              data-preco-max="1000"
+            >
+              Até 1000
+            </button>
+            <button
+              class="filtro-preco"
+              data-preco-min="1001"
+              data-preco-max="5000"
+            >
+              1001 - 5000
+            </button>
+            <button
+              class="filtro-preco"
+              data-preco-min="5001"
+              data-preco-max="10000"
+            >
+              5001 - 10000
+            </button>
+          </div>
+
+          <button id="btn-buscar">Buscar 🔍</button>
+        </div>
+
+        <p id="relacionados">Todos os instrumentos:</p>
+        <div id="container">
+          <!-- Cards aparecerão aqui -->
+        </div>
+      </div>
+    </main>
+
     <!-- Footer -->
     <footer>
       <div class="center">
