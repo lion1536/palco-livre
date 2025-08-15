@@ -3,71 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Palco Livre - Busca</title>
     <link rel="stylesheet" href="style.css" />
-    <script src="script.js"></script>
+    <link rel="stylesheet" href="busca.css" />
   </head>
   <body>
+    <script src="carrinho.js" type="module" defer></script>
+    <!-- Header -->
     <header class="cabecalho">
       <div id="svgs">
-        <div id="buscar">
-          <button
-            onclick="abrirBusca()"
-            style="background-color: transparent; border: none"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="65"
-              height="65"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="white"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                fill="none"
-              />
-              <line
-                x1="20.5"
-                y1="20.5"
-                x2="15.8"
-                y2="15.8"
-                stroke="white"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-        <a href="index.html"
-          ><img src="../images/image.png" alt="" width="120" id="palcolivre"
-        /></a>
+        <a href="index.html">
+          <img
+            src="../images/image.png"
+            alt="Palco Livre"
+            width="120"
+            id="palcolivre"
+          />
+        </a>
         <div id="semnome">
-          <a href="login.html"
-            ><img src="../images/profile-svgrepo-com (1).svg" alt="" width="50"
-          /></a>
-          <a href="Carrinho.html"
-            ><img
-              src="../images/shop-cart-svgrepo-com (2).svg"
-              alt=""
+          <a href="login.html">
+            <img
+              src="../images/profile-svgrepo-com (1).svg"
+              alt="Perfil"
               width="50"
-          /></a>
+            />
+          </a>
+          <a href="Carrinho.html">
+            <img
+              src="../images/shop-cart-svgrepo-com (2).svg"
+              alt="Carrinho"
+              width="50"
+            />
+          </a>
         </div>
       </div>
     </header>
-    <div id="busca">
-      <p id="relacionados">Estes são os resultados relacionados a:</p>
-      <div id="container">
-        <div class="base"></div>
+
+    <!-- Main / Busca -->
+    <main>
+      <div id="busca">
+        <!-- Filtros de busca -->
+        <div id="filtros" class="filtros-container">
+          <input
+            type="text"
+            id="input-nome"
+            placeholder="Nome do instrumento"
+          />
+          <input type="text" id="input-categoria" placeholder="Categoria" />
+          <input type="text" id="input-marca" placeholder="Marca" />
+          <input
+            type="number"
+            id="input-preco-min"
+            placeholder="Preço mínimo"
+          />
+          <input
+            type="number"
+            id="input-preco-max"
+            placeholder="Preço máximo"
+          />
+          <button id="btn-buscar">Buscar 🔍</button>
+        </div>
+
+        <!-- Texto de filtros aplicados -->
+        <p id="relacionados">Todos os instrumentos:</p>
+
+        <!-- Container de resultados -->
+        <div id="container">
+          <!-- Cards da busca aparecerão aqui -->
+        </div>
       </div>
-    </div>
+    </main>
+
+    <!-- Footer -->
     <footer>
       <div class="center">
         <div class="redes">
@@ -78,19 +85,103 @@
           <button class="Sociais">Youtube</button>
           <button class="Sociais">Twitter</button>
         </div>
-        <div class="modelos">
-          <p>Modelos</p>
-          <button class="Sociais">Instrumentos Básicos</button>
-          <button class="Sociais">Instrumentos Intermediários</button>
-          <button class="Sociais">Instrumentos Avançados</button>
-        </div>
-        <div class="ajuda">
-          <p>Precisa de Ajuda?</p>
-          <p>Entre em Contato!</p>
-          <button class="Sociais">E-mail</button>
-          <button class="Sociais">Telefone</button>
-        </div>
       </div>
     </footer>
+
+    <!-- Script inline para busca -->
+    <script type="module" defer>
+      import { adicionarAoCarrinho } from "./carrinho.js";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const container = document.getElementById("container");
+        const inputNome = document.getElementById("input-nome");
+        const inputCategoria = document.getElementById("input-categoria");
+        const inputMarca = document.getElementById("input-marca");
+        const inputPrecoMin = document.getElementById("input-preco-min");
+        const inputPrecoMax = document.getElementById("input-preco-max");
+        const relacionados = document.getElementById("relacionados");
+        const btnBuscar = document.getElementById("btn-buscar");
+
+        async function abrirBusca() {
+          const filtros = {};
+          if (inputNome.value.trim()) filtros.nome = inputNome.value.trim();
+          if (inputCategoria.value.trim())
+            filtros.categoria = inputCategoria.value.trim();
+          if (inputMarca.value.trim()) filtros.marca = inputMarca.value.trim();
+          if (inputPrecoMin.value)
+            filtros.preco_min = parseFloat(inputPrecoMin.value);
+          if (inputPrecoMax.value)
+            filtros.preco_max = parseFloat(inputPrecoMax.value);
+
+          try {
+            const res = await fetch("http://localhost:3000/buscar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(filtros),
+            });
+            if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
+            const data = await res.json();
+            exibirResultados(data.resultados, filtros);
+          } catch (err) {
+            console.error("Erro na busca:", err);
+            alert("Erro ao buscar instrumentos. Veja o console.");
+          }
+        }
+
+        function exibirResultados(resultados, filtros) {
+          container.innerHTML = "";
+          const filtroTexto = Object.values(filtros).filter(Boolean).join(", ");
+          relacionados.textContent = filtroTexto
+            ? `Resultados relacionados a: ${filtroTexto}`
+            : "Todos os instrumentos:";
+
+          if (!resultados || resultados.length === 0) {
+            container.innerHTML =
+              '<p class="nenhum">Nenhum instrumento encontrado.</p>';
+            return;
+          }
+
+          resultados.forEach((item) => {
+            const card = document.createElement("div");
+            card.classList.add("card-instrumento");
+            card.innerHTML = `
+          <img src="${item.imagem || "../images/download.jpg"}" alt="${
+              item.nome
+            }" class="img-instrumento"/>
+          <div class="info">
+            <h3>${item.nome}</h3>
+            <p>Categoria: ${item.categoria || "-"}</p>
+            <p>Marca: ${item.marca || "-"}</p>
+            <p>Preço: R$ ${Number(item.preco).toFixed(2)}</p>
+          </div>
+          <button class="btn-adicionar" data-id="${
+            item.id
+          }">Adicionar ao Carrinho</button>
+        `;
+            container.appendChild(card);
+          });
+
+          container.querySelectorAll(".btn-adicionar").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const token = localStorage.getItem("token");
+              const instrumentoId = btn.dataset.id;
+              try {
+                await adicionarAoCarrinho(token, instrumentoId, 1);
+                alert("Item adicionado ao carrinho!");
+              } catch (err) {
+                alert("Erro ao adicionar ao carrinho: " + err.message);
+              }
+            });
+          });
+        }
+
+        btnBuscar.addEventListener("click", abrirBusca);
+        document.querySelectorAll("#filtros input").forEach((input) => {
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") abrirBusca();
+          });
+        });
+      });
+    </script>
   </body>
 </html>
