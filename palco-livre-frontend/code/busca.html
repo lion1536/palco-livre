@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="busca.css" />
   </head>
   <body>
-    <script src="carrinho.js" type="module" defer></script>
     <!-- Header -->
     <header class="cabecalho">
       <div id="svgs">
@@ -62,28 +61,6 @@
             placeholder="Preço máximo"
           />
           <button id="btn-buscar">Buscar 🔍</button>
-        </div>
-
-        <!-- Texto de filtros aplicados -->
-        <p id="relacionados">Todos os instrumentos:</p>
-
-        <!-- Container de resultados -->
-        <div id="container">
-          <!-- Cards da busca aparecerão aqui -->
-        </div>
-      </div>
-    </main>
-
-    <!-- Main / Busca -->
-    <main>
-      <div id="busca">
-        <div id="filtros" class="filtros-container">
-          <!-- Input de busca -->
-          <input
-            type="text"
-            id="input-nome"
-            placeholder="Buscar instrumento..."
-          />
 
           <!-- Filtros como botões -->
           <div id="filtros-categoria">
@@ -122,13 +99,14 @@
               5001 - 10000
             </button>
           </div>
-
-          <button id="btn-buscar">Buscar 🔍</button>
         </div>
 
+        <!-- Texto de filtros aplicados -->
         <p id="relacionados">Todos os instrumentos:</p>
+
+        <!-- Container de resultados -->
         <div id="container">
-          <!-- Cards aparecerão aqui -->
+          <!-- Cards da busca aparecerão aqui -->
         </div>
       </div>
     </main>
@@ -146,6 +124,10 @@
         </div>
       </div>
     </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="busca.js" defer></script>
+    <script type="module" src="carrinho.js" defer></script>
 
     <!-- Script inline para busca -->
     <script type="module" defer>

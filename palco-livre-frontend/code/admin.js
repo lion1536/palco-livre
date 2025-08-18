@@ -21,7 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Função para buscar instrumentos do backend
   async function carregarInstrumentos() {
     try {
-      const res = await fetch("http://localhost:3000/instrumentos");
+      const res = await fetch("http://localhost:3000/instrumentos", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       instrumentos = await res.json();
       renderInstrumentos(instrumentos);
       relacionados.textContent = "Todos os instrumentos:";
@@ -41,7 +43,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     lista.forEach((item) => {
-      const imgSrc = item.imagem_principal || "../images/default-profile.png";
+      const imgSrc = item.imagem_principal
+        ? `http://localhost:3000/uploads/${item.imagem_principal}`
+        : "../images/default-profile.png";
 
       const div = document.createElement("div");
       div.classList.add("card-instrumento");

@@ -12,29 +12,28 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Regex para validar email
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Regex para validar nome do arquivo e extensões seguras
+// Regex para validar nome de arquivo e extensões de imagem
 const imageRegex = /^[a-zA-Z0-9._-]+\.(jpg|jpeg|png|gif|webp)$/i;
 
-// Garante que a pasta existe
+// Garante que a pasta de uploads existe
 const uploadDir = "uploads/perfis";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configuração do multer
+// Configuração do Multer
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
     const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueName + path.extname(file.originalname).toLowerCase());
   },
 });
 
-// Filtro de arquivo (valida nome + MIME type)
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   const validMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -50,9 +49,9 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const upload = multer({ storage });
+const upload = multer({ storage, fileFilter });
 
-// Rota pública para acessar imagens
+// Middleware para servir arquivos estáticos (imagens)
 app.use("/uploads", express.static("uploads"));
 
 // Middleware para aceitar JSON
@@ -61,10 +60,7 @@ app.use(express.json());
 // CORS para DEV (aceita qualquer origem sem crash)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // aceita qualquer origem, inclusive null (file://)
-      callback(null, true);
-    },
+    origin: (origin, callback) => callback(null, true), // aceita qualquer origem, inclusive file://
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
@@ -109,20 +105,16 @@ app.post("/cadastro", async (req, res) => {
   try {
     const { email, senha, endereco } = req.body;
 
-    if (!email || !senha) {
+    if (!email || !senha)
       return res.status(400).json({ error: "Preencha email e senha." });
-    }
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email))
       return res.status(400).json({ error: "Email inválido." });
-    }
 
     const [existing] = await pool.query("SELECT * FROM login WHERE email = ?", [
       email,
     ]);
-
-    if (existing.length > 0) {
+    if (existing.length > 0)
       return res.status(409).json({ error: "Email já cadastrado." });
-    }
 
     const senhaHash = await bcrypt.hash(senha, 10);
     const dataAtual = new Date();
@@ -150,27 +142,18 @@ app.post("/cadastro", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
-    console.log("Login recebido:", email);
-
-    if (!email || !senha) {
+    if (!email || !senha)
       return res.status(400).json({ error: "Campos obrigatórios" });
-    }
 
     const [rows] = await pool.query("SELECT * FROM login WHERE email = ?", [
       email,
     ]);
-
-    if (rows.length === 0) {
+    if (rows.length === 0)
       return res.status(404).json({ error: "Usuário não encontrado" });
-    }
 
     const usuario = rows[0];
-
-    // bcrypt.compare precisa da hash correta
     const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
-    if (!senhaValida) {
-      return res.status(401).json({ error: "Senha incorreta" });
-    }
+    if (!senhaValida) return res.status(401).json({ error: "Senha incorreta" });
 
     const token = jwt.sign(
       { usuarioId: usuario.usuario_id, email: usuario.email },
@@ -178,7 +161,7 @@ app.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Salvar token na tabela sessions, data_criacao será automática
+    // Salvar token na tabela sessions
     await pool.query("INSERT INTO sessions (usuario_id, token) VALUES (?, ?)", [
       usuario.usuario_id,
       token,
@@ -190,29 +173,6 @@ app.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro no login:", err);
-    res.status(500).json({ error: "Erro interno no servidor" });
-  }
-});
-
-// Adicionar item ao carrinho
-app.post("/carrinho", authenticateToken, async (req, res) => {
-  try {
-    const { instrumentoId, quantidade } = req.body;
-
-    if (!instrumentoId || !quantidade) {
-      return res
-        .status(400)
-        .json({ error: "Instrumento e quantidade são obrigatórios." });
-    }
-
-    await pool.query(
-      "INSERT INTO carrinho (usuario_id, instrumento_id, quantidade) VALUES (?, ?, ?)",
-      [req.user.usuarioId, instrumentoId, quantidade]
-    );
-
-    res.status(201).json({ message: "Item adicionado ao carrinho!" });
-  } catch (err) {
-    console.error("Erro ao adicionar no carrinho:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
@@ -228,15 +188,13 @@ app.delete("/carrinho/:itemId", authenticateToken, async (req, res) => {
       "SELECT * FROM carrinho WHERE carrinho_id = ? AND usuario_id = ?",
       [id, req.user.usuarioId]
     );
-
     if (rows.length === 0)
       return res.status(404).json({ error: "Item não encontrado." });
 
-    const [result] = await pool.query(
+    await pool.query(
       "DELETE FROM carrinho WHERE carrinho_id = ? AND usuario_id = ?",
       [id, req.user.usuarioId]
     );
-
     res.json({ message: "Item removido do carrinho com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover item:", err);
@@ -248,19 +206,41 @@ app.delete("/carrinho/:itemId", authenticateToken, async (req, res) => {
 app.get("/carrinho", authenticateToken, async (req, res) => {
   try {
     const [items] = await pool.query(
-      `SELECT c.carrinho_id, c.quantidade, i.nome, i.preco,
-              img.caminho AS imagem_principal
-       FROM carrinho c
-       JOIN instrumentos i ON c.instrumento_id = i.instrumento_id
-       LEFT JOIN instrumento_imagens img 
-            ON i.instrumento_id = img.instrumento_id AND img.principal = TRUE
-       WHERE c.usuario_id = ?`,
+      `
+      SELECT c.carrinho_id, c.quantidade, i.nome, i.preco, img.caminho AS imagem_principal
+      FROM carrinho c
+      JOIN instrumentos i ON c.instrumento_id = i.instrumento_id
+      LEFT JOIN instrumento_imagens img
+        ON i.instrumento_id = img.instrumento_id AND img.principal = TRUE
+      WHERE c.usuario_id = ?
+    `,
       [req.user.usuarioId]
     );
 
     res.json({ carrinho: items });
   } catch (err) {
-    console.error("Erro ao listar itens:", err);
+    console.error("Erro ao listar itens do carrinho:", err);
+    res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Adicionar item ao carrinho
+app.post("/carrinho", authenticateToken, async (req, res) => {
+  try {
+    const { instrumentoId, quantidade } = req.body;
+    if (!instrumentoId || !quantidade)
+      return res
+        .status(400)
+        .json({ error: "Instrumento e quantidade são obrigatórios." });
+
+    await pool.query(
+      "INSERT INTO carrinho (usuario_id, instrumento_id, quantidade) VALUES (?, ?, ?)",
+      [req.user.usuarioId, instrumentoId, quantidade]
+    );
+
+    res.status(201).json({ message: "Item adicionado ao carrinho!" });
+  } catch (err) {
+    console.error("Erro ao adicionar no carrinho:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
@@ -269,7 +249,6 @@ app.get("/carrinho", authenticateToken, async (req, res) => {
 app.get("/buscar", async (req, res) => {
   try {
     const { nome, categoria, marca } = req.query;
-
     let filtros = [];
     let params = [];
 
@@ -302,6 +281,7 @@ app.get("/buscar", async (req, res) => {
 
     res.json({ resultados: rows });
   } catch (err) {
+    console.error("Erro na busca:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
@@ -310,7 +290,6 @@ app.get("/buscar", async (req, res) => {
 app.post("/buscar", async (req, res) => {
   try {
     const { nome, categoria, marca, preco_min, preco_max } = req.body;
-
     let filtros = [];
     let params = [];
 
@@ -327,16 +306,13 @@ app.post("/buscar", async (req, res) => {
       params.push(marca);
     }
 
-    const precoMin = preco_min != null ? Number(preco_min) : null;
-    const precoMax = preco_max != null ? Number(preco_max) : null;
-
-    if (precoMin !== null) {
+    if (preco_min != null) {
       filtros.push("i.preco >= ?");
-      params.push(precoMin);
+      params.push(Number(preco_min));
     }
-    if (precoMax !== null) {
+    if (preco_max != null) {
       filtros.push("i.preco <= ?");
-      params.push(precoMax);
+      params.push(Number(preco_max));
     }
 
     const whereClause =
@@ -349,24 +325,30 @@ app.post("/buscar", async (req, res) => {
       LEFT JOIN instrumento_imagens im
         ON i.instrumento_id = im.instrumento_id AND im.principal = TRUE
       ${whereClause}
-      `,
+    `,
       params
     );
 
     res.json({ resultados: rows });
   } catch (err) {
+    console.error("Erro na busca POST:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
 
-// Listar todos os instrumentos disponíveis
+// Listar todos os instrumentos
 app.get("/instrumentos", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM instrumentos");
-    res.status(200).json(rows);
-  } catch (error) {
-    console.error("Erro ao buscar instrumentos:", error);
-    res.status(500).json({ error: "Erro interno no servidor." });
+    const [rows] = await pool.query(`
+      SELECT i.*, im.caminho AS imagem_principal
+      FROM instrumentos i
+      LEFT JOIN instrumento_imagens im
+        ON i.instrumento_id = im.instrumento_id AND im.principal = TRUE
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Erro ao listar instrumentos:", err);
+    res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 
@@ -374,29 +356,34 @@ app.get("/instrumentos", async (req, res) => {
 app.get("/instrumentos/:id", async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM instrumentos WHERE instrumento_id = ?",
+      `
+      SELECT i.*, ii.caminho AS imagem_principal
+      FROM instrumentos i
+      LEFT JOIN instrumento_imagens ii
+        ON i.instrumento_id = ii.instrumento_id AND ii.principal = TRUE
+      WHERE i.instrumento_id = ?
+    `,
       [req.params.id]
     );
-    if (rows.length === 0) {
+
+    if (rows.length === 0)
       return res.status(404).json({ error: "Instrumento não encontrado." });
-    }
-    res.status(200).json(rows[0]);
+
+    res.json(rows[0]);
   } catch (err) {
     console.error("Erro ao buscar instrumento:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
 
-// Aidionar novo instrumento (protegida)
+// Adicionar novo instrumento + imagem (protegida)
 app.post("/instrumentos", authenticateToken, async (req, res) => {
   try {
     const { nome, categoria, marca, descricao, preco, estoque } = req.body;
-
-    if (!nome || !categoria || !marca || !preco || estoque == null) {
+    if (!nome || !categoria || !marca || !preco || estoque == null)
       return res
         .status(400)
         .json({ error: "Preencha todos os campos obrigatórios." });
-    }
 
     const [result] = await pool.query(
       "INSERT INTO instrumentos (nome, categoria, marca, descricao, preco, estoque) VALUES (?, ?, ?, ?, ?, ?)",
@@ -407,27 +394,25 @@ app.post("/instrumentos", authenticateToken, async (req, res) => {
       message: "Instrumento adicionado com sucesso!",
       id: result.insertId,
     });
-  } catch (error) {
-    console.error("Erro ao adicionar instrumento:", error);
+  } catch (err) {
+    console.error("Erro ao adicionar instrumento:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
 
-// Atualizar instrumento (protegida)
+// Atualizar instrumento + imagem (protegida)
 app.put("/instrumentos/:id", authenticateToken, async (req, res) => {
   try {
     const { nome, categoria, marca, descricao, preco, estoque } = req.body;
-
     const [result] = await pool.query(
       "UPDATE instrumentos SET nome=?, categoria=?, marca=?, descricao=?, preco=?, estoque=? WHERE instrumento_id=?",
       [nome, categoria, marca, descricao, preco, estoque, req.params.id]
     );
 
-    if (result.affectedRows === 0) {
+    if (result.affectedRows === 0)
       return res.status(404).json({ error: "Instrumento não encontrado." });
-    }
 
-    res.status(200).json({ message: "Instrumento atualizado com sucesso!" });
+    res.json({ message: "Instrumento atualizado com sucesso!" });
   } catch (err) {
     console.error("Erro ao atualizar instrumento:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
@@ -442,11 +427,10 @@ app.delete("/instrumentos/:id", authenticateToken, async (req, res) => {
       [req.params.id]
     );
 
-    if (result.affectedRows === 0) {
+    if (result.affectedRows === 0)
       return res.status(404).json({ error: "Instrumento não encontrado." });
-    }
 
-    res.status(200).json({ message: "Instrumento removido com sucesso!" });
+    res.json({ message: "Instrumento removido com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover instrumento:", err);
     res.status(500).json({ error: "Erro interno no servidor." });

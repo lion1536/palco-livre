@@ -4,12 +4,12 @@ USE palco_livre;
 CREATE TABLE instrumentos (
     instrumento_id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(50) NOT NULL,
-    categoria VARCHAR(10) NOT NULL,
+    categoria VARCHAR(30) NOT NULL, 
     marca VARCHAR(20) NOT NULL,
-    descricao VARCHAR(100),
-    preco DECIMAL(10,2) NOT NULL
+    descricao VARCHAR(255),         
+    preco DECIMAL(10,2) NOT NULL,
+    estoque INT NOT NULL DEFAULT 0 
 );
-
 CREATE TABLE instrumento_imagens (
     imagem_id INT PRIMARY KEY AUTO_INCREMENT,
     instrumento_id INT NOT NULL,

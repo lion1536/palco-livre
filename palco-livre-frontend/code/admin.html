@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Admin - Palco Livre</title>
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Painel Administrativo</h1>
+      <button id="btnLogout">Sair</button>
+    </header>
+
+    <main>
+      <!-- Formulário para adicionar/editar instrumento -->
+      <section id="form-instrumento">
+        <h2 id="formTitle">Adicionar Instrumento</h2>
+        <form id="instrumentoForm">
+          <input type="hidden" id="instrumentoId" />
+          <label>Nome: <input type="text" id="nome" required /></label>
+          <label
+            >Categoria: <input type="text" id="categoria" required
+          /></label>
+          <label>Marca: <input type="text" id="marca" required /></label>
+          <label>Descrição: <input type="text" id="descricao" /></label>
+          <label
+            >Preço: <input type="number" id="preco" step="0.01" required
+          /></label>
+          <label>Estoque: <input type="number" id="estoque" required /></label>
+          <label
+            >Imagem: <input type="file" id="imagem" accept="image/*"
+          /></label>
+          <button type="submit" id="btnSalvar">Salvar</button>
+          <button type="button" id="btnCancelar">Cancelar</button>
+        </form>
+      </section>
+
+      <!-- Lista de instrumentos -->
+      <section id="lista-instrumentos">
+        <h2>Instrumentos</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th>Marca</th>
+              <th>Preço</th>
+              <th>Estoque</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="instrumentosBody">
+            <!-- Linhas serão preenchidas pelo JS -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script type="module" src="admin.js" defer></script>
+  </body>
+</html>
