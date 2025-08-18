@@ -1,14 +1,16 @@
-import { adicionarAoCarrinho } from "./carrinho.js";
+import { adicionarAoCarrinho } from "./carrinhoAPI.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("token");
-  const container = document.getElementById("container");
+  const container = document.getElementById("container1");
   const inputNome = document.getElementById("input-nome");
-  const btnBuscar = document.getElementById("btn-buscar");
-  const relacionados = document.getElementById("relacionados");
+  const btnBuscar = document.getElementById("btn-buscar1");
+  const relacionados = document.getElementById("relacionados1");
+
   const botoesCategoria = document.querySelectorAll(".filtro");
   const botoesPreco = document.querySelectorAll(".filtro-preco");
 
+  // Verifica se todos os elementos existem
   if (!container || !inputNome || !btnBuscar || !relacionados) {
     console.error("Um ou mais elementos obrigatórios não encontrados no DOM!");
     return;
@@ -18,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let filtroPreco = null;
   let instrumentos = [];
 
-  // Função para buscar instrumentos do backend
+  // Busca todos os instrumentos do backend
   async function carregarInstrumentos() {
     try {
       const res = await fetch("http://localhost:3000/instrumentos");
@@ -32,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Renderiza os instrumentos no container
   function renderInstrumentos(lista) {
     container.innerHTML = "";
     if (!lista.length) {
@@ -53,16 +56,21 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>Preço: R$ ${Number(item.preco).toFixed(2)}</p>
           <p>Estoque: ${item.estoque != null ? item.estoque : "N/A"}</p>
         </div>
-        <button class="btn-adicionar" data-id="${
-          item.instrumento_id
-        }">Adicionar ao Carrinho</button>
+        <button class="btn-adicionar" data-id="${item.instrumento_id}">
+          Adicionar ao Carrinho
+        </button>
       `;
       container.appendChild(div);
     });
 
+    // Adiciona evento para adicionar ao carrinho
     container.querySelectorAll(".btn-adicionar").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const instrumentoId = btn.dataset.id;
+        if (!instrumentoId) {
+          alert("Erro: instrumento_id inválido.");
+          return;
+        }
         try {
           await adicionarAoCarrinho(token, instrumentoId, 1);
           alert("Item adicionado ao carrinho!");
@@ -73,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Filtra os instrumentos
   function filtrarInstrumentos() {
     const termo = inputNome.value.toLowerCase();
 
@@ -123,20 +132,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   botoesPreco.forEach((btn) => {
     btn.addEventListener("click", () => {
+      const min = Number(btn.dataset.precoMin);
+      const max = Number(btn.dataset.precoMax);
       filtroPreco =
-        filtroPreco &&
-        filtroPreco.min === Number(btn.dataset.precoMin) &&
-        filtroPreco.max === Number(btn.dataset.precoMax)
+        filtroPreco && filtroPreco.min === min && filtroPreco.max === max
           ? null
-          : {
-              min: Number(btn.dataset.precoMin),
-              max: Number(btn.dataset.precoMax),
-            };
+          : { min, max };
       botoesPreco.forEach((b) => b.classList.toggle("ativo", b === btn));
       filtrarInstrumentos();
     });
   });
 
-  // Inicializa
+  // Inicializa a página
   carregarInstrumentos();
 });

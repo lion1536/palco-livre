@@ -1,144 +1,178 @@
-import { adicionarAoCarrinho } from "./carrinho.js";
+// admin.js
+const token = localStorage.getItem("token");
 
 document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
-  const container = document.getElementById("container");
-  const inputNome = document.getElementById("input-nome");
-  const btnBuscar = document.getElementById("btn-buscar");
-  const relacionados = document.getElementById("relacionados");
-  const botoesCategoria = document.querySelectorAll(".filtro");
-  const botoesPreco = document.querySelectorAll(".filtro-preco");
+  // Elementos do formulário
+  const instrumentoForm = document.getElementById("instrumentoForm");
+  const formTitle = document.getElementById("formTitle");
+  const btnCancelar = document.getElementById("btnCancelar");
+  const instrumentosBody = document.getElementById("instrumentosBody");
 
-  if (!container || !inputNome || !btnBuscar || !relacionados) {
-    console.error("Um ou mais elementos obrigatórios não encontrados no DOM!");
+  const inputId = document.getElementById("instrumentoId");
+  const inputNome = document.getElementById("nome");
+  const inputCategoria = document.getElementById("categoria");
+  const inputMarca = document.getElementById("marca");
+  const inputDescricao = document.getElementById("descricao");
+  const inputPreco = document.getElementById("preco");
+  const inputEstoque = document.getElementById("estoque");
+  const inputImagem = document.getElementById("imagem");
+
+  if (!instrumentoForm || !instrumentosBody) {
+    console.error("Elementos obrigatórios do DOM não encontrados!");
     return;
   }
 
-  let filtroCategoria = null;
-  let filtroPreco = null;
   let instrumentos = [];
 
-  // Função para buscar instrumentos do backend
+  // -------------------------
+  // Função para carregar todos os instrumentos
   async function carregarInstrumentos() {
     try {
       const res = await fetch("http://localhost:3000/instrumentos", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       instrumentos = await res.json();
-      renderInstrumentos(instrumentos);
-      relacionados.textContent = "Todos os instrumentos:";
+      renderInstrumentos();
     } catch (err) {
       console.error("Erro ao carregar instrumentos:", err);
-      container.innerHTML =
-        '<p class="nenhum">Erro ao carregar instrumentos do servidor.</p>';
     }
   }
 
-  function renderInstrumentos(lista) {
-    container.innerHTML = "";
-    if (!lista.length) {
-      container.innerHTML =
-        '<p class="nenhum">Nenhum instrumento encontrado.</p>';
-      return;
-    }
-
-    lista.forEach((item) => {
+  // -------------------------
+  // Renderiza a lista de instrumentos
+  function renderInstrumentos() {
+    instrumentosBody.innerHTML = "";
+    instrumentos.forEach((item) => {
+      const tr = document.createElement("tr");
       const imgSrc = item.imagem_principal
         ? `http://localhost:3000/uploads/${item.imagem_principal}`
         : "../images/default-profile.png";
 
-      const div = document.createElement("div");
-      div.classList.add("card-instrumento");
-      div.innerHTML = `
-        <img src="${imgSrc}" alt="${item.nome}" class="img-instrumento"/>
-        <div class="info">
-          <h3>${item.nome}</h3>
-          <p>Categoria: ${item.categoria}</p>
-          <p>Preço: R$ ${Number(item.preco).toFixed(2)}</p>
-          <p>Estoque: ${item.estoque != null ? item.estoque : "N/A"}</p>
-        </div>
-        <button class="btn-adicionar" data-id="${
-          item.instrumento_id
-        }">Adicionar ao Carrinho</button>
+      tr.innerHTML = `
+        <td><img src="${imgSrc}" alt="${item.nome}" width="50"/></td>
+        <td>${item.nome}</td>
+        <td>${item.categoria}</td>
+        <td>${item.marca}</td>
+        <td>R$ ${Number(item.preco).toFixed(2)}</td>
+        <td>${item.estoque}</td>
+        <td>
+          <button class="btn-editar" data-id="${
+            item.instrumento_id
+          }">Editar</button>
+          <button class="btn-excluir" data-id="${
+            item.instrumento_id
+          }">Excluir</button>
+        </td>
       `;
-      container.appendChild(div);
+      instrumentosBody.appendChild(tr);
     });
 
-    container.querySelectorAll(".btn-adicionar").forEach((btn) => {
+    // Eventos de editar
+    instrumentosBody.querySelectorAll(".btn-editar").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        preencherFormulario(id);
+      });
+    });
+
+    // Eventos de excluir
+    instrumentosBody.querySelectorAll(".btn-excluir").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const instrumentoId = btn.dataset.id;
-        try {
-          await adicionarAoCarrinho(token, instrumentoId, 1);
-          alert("Item adicionado ao carrinho!");
-        } catch (err) {
-          alert("Erro ao adicionar ao carrinho: " + err.message);
+        const id = btn.dataset.id;
+        if (confirm("Deseja realmente excluir este instrumento?")) {
+          try {
+            const res = await fetch(
+              `http://localhost:3000/instrumentos/${id}`,
+              {
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            if (!res.ok) throw new Error("Erro ao excluir instrumento");
+            alert("Instrumento excluído!");
+            await carregarInstrumentos();
+          } catch (err) {
+            alert(err.message);
+          }
         }
       });
     });
   }
 
-  function filtrarInstrumentos() {
-    const termo = inputNome.value.toLowerCase();
+  // -------------------------
+  // Preenche formulário para edição
+  function preencherFormulario(id) {
+    const instrumento = instrumentos.find((i) => i.instrumento_id == id);
+    if (!instrumento) return;
 
-    const filtrados = instrumentos.filter((item) => {
-      const correspondeNome = item.nome.toLowerCase().includes(termo);
-      const correspondeCategoria = filtroCategoria
-        ? item.categoria === filtroCategoria
-        : true;
-      const correspondePreco = filtroPreco
-        ? item.preco >= filtroPreco.min && item.preco <= filtroPreco.max
-        : true;
-      return correspondeNome && correspondeCategoria && correspondePreco;
-    });
+    inputId.value = instrumento.instrumento_id;
+    inputNome.value = instrumento.nome;
+    inputCategoria.value = instrumento.categoria;
+    inputMarca.value = instrumento.marca;
+    inputDescricao.value = instrumento.descricao || "";
+    inputPreco.value = instrumento.preco;
+    inputEstoque.value = instrumento.estoque;
 
-    renderInstrumentos(filtrados);
-
-    const filtrosAplicados = [
-      termo || null,
-      filtroCategoria || null,
-      filtroPreco ? `${filtroPreco.min}-${filtroPreco.max}` : null,
-    ]
-      .filter(Boolean)
-      .join(", ");
-
-    relacionados.textContent = filtrosAplicados
-      ? `Resultados relacionados a: ${filtrosAplicados}`
-      : "Todos os instrumentos:";
+    formTitle.textContent = "Editar Instrumento";
   }
 
-  // Eventos
-  btnBuscar.addEventListener("click", filtrarInstrumentos);
-  inputNome.addEventListener("keyup", (e) => {
-    if (e.key === "Enter") filtrarInstrumentos();
-  });
+  // -------------------------
+  // Limpa formulário
+  function limparFormulario() {
+    instrumentoForm.reset();
+    inputId.value = "";
+    formTitle.textContent = "Adicionar Instrumento";
+  }
 
-  botoesCategoria.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      filtroCategoria =
-        filtroCategoria === btn.dataset.categoria
-          ? null
-          : btn.dataset.categoria;
-      botoesCategoria.forEach((b) =>
-        b.classList.toggle("ativo", b.dataset.categoria === filtroCategoria)
-      );
-      filtrarInstrumentos();
-    });
-  });
+  btnCancelar.addEventListener("click", limparFormulario);
 
-  botoesPreco.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      filtroPreco =
-        filtroPreco &&
-        filtroPreco.min === Number(btn.dataset.precoMin) &&
-        filtroPreco.max === Number(btn.dataset.precoMax)
-          ? null
-          : {
-              min: Number(btn.dataset.precoMin),
-              max: Number(btn.dataset.precoMax),
-            };
-      botoesPreco.forEach((b) => b.classList.toggle("ativo", b === btn));
-      filtrarInstrumentos();
-    });
+  // -------------------------
+  // Submissão do formulário
+  instrumentoForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const id = inputId.value;
+    const formData = {
+      nome: inputNome.value,
+      categoria: inputCategoria.value,
+      marca: inputMarca.value,
+      descricao: inputDescricao.value,
+      preco: parseFloat(inputPreco.value),
+      estoque: parseInt(inputEstoque.value),
+    };
+
+    try {
+      let url = "http://localhost:3000/instrumentos";
+      let method = "POST";
+
+      if (id) {
+        url += `/${id}`;
+        method = "PUT";
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao salvar instrumento");
+      }
+
+      alert(`Instrumento ${id ? "atualizado" : "adicionado"} com sucesso!`);
+      limparFormulario();
+      carregarInstrumentos();
+    } catch (err) {
+      alert(err.message);
+    }
   });
 
   // Inicializa

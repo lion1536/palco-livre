@@ -112,11 +112,10 @@
 
     <!-- Scripts -->
     <script type="module" src="busca.js" defer></script>
-    <script type="module" src="carrinho.js" defer></script>
 
     <!-- Script inline para busca -->
     <script type="module" defer>
-      import { adicionarAoCarrinho } from "./carrinho.js";
+      import { adicionarAoCarrinho } from "./carrinhoAPI.js";
 
       document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById("container1");
@@ -201,7 +200,9 @@
           });
         }
 
-        btnBuscar.addEventListener("click", abrirBusca());
+        // Eventos
+        btnBuscar.addEventListener("click", abrirBusca);
+
         document.querySelectorAll("#filtros input").forEach((input) => {
           input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") abrirBusca();

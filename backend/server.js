@@ -7,40 +7,25 @@ import bcrypt from "bcrypt";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Regex para validar email
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const perfisDir = "uploads/perfis";
+const instrumentosDir = "uploads/instrumentos";
 
-// Regex para validar nome de arquivo e extensões de imagem
-const imageRegex = /^[a-zA-Z0-9._-]+\.(jpg|jpeg|png|gif|webp)$/i;
-
-// Garante que a pasta de uploads existe
-const uploadDir = "uploads/perfis";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configuração do Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueName + path.extname(file.originalname).toLowerCase());
-  },
-});
+if (!fs.existsSync(perfisDir)) fs.mkdirSync(perfisDir, { recursive: true });
+if (!fs.existsSync(instrumentosDir))
+  fs.mkdirSync(instrumentosDir, { recursive: true });
 
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   const validMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-
-  if (!imageRegex.test(file.originalname)) {
-    return cb(new Error("Nome de arquivo inválido ou extensão não permitida."));
-  }
 
   if (!validMimes.includes(file.mimetype)) {
     return cb(new Error("Formato de arquivo inválido."));
@@ -49,24 +34,46 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const upload = multer({ storage, fileFilter });
+// Perfis
+const storagePerfis = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, perfisDir),
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueName + path.extname(file.originalname).toLowerCase());
+  },
+});
 
-// Middleware para servir arquivos estáticos (imagens)
-app.use("/uploads", express.static("uploads"));
+// Instrumentos
+const storageInstrumentos = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, instrumentosDir),
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueName + path.extname(file.originalname).toLowerCase());
+  },
+});
 
-// Middleware para aceitar JSON
+export const uploadPerfil = multer({ storage: storagePerfis, fileFilter });
+export const uploadInstrumento = multer({
+  storage: storageInstrumentos,
+  fileFilter,
+});
+
+// Servir arquivos estáticos
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Aceitar JSON
 app.use(express.json());
 
-// CORS para DEV (aceita qualquer origem sem crash)
+// CORS para DEV
 app.use(
   cors({
-    origin: (origin, callback) => callback(null, true), // aceita qualquer origem, inclusive file://
+    origin: (origin, callback) => callback(null, true),
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
 
-// Pool de conexão MySQL
+// Conexão com o MySQL
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -180,14 +187,14 @@ app.post("/login", async (req, res) => {
 // Remover item do carrinho
 app.delete("/carrinho/:itemId", authenticateToken, async (req, res) => {
   try {
-    const id = parseInt(req.params.itemId, 10);
-    if (isNaN(id) || id <= 0)
-      return res.status(400).json({ error: "ID inválido." });
+    const id = Number(req.params.itemId);
+    if (!id || id <= 0) return res.status(400).json({ error: "ID inválido." });
 
     const [rows] = await pool.query(
       "SELECT * FROM carrinho WHERE carrinho_id = ? AND usuario_id = ?",
       [id, req.user.usuarioId]
     );
+
     if (rows.length === 0)
       return res.status(404).json({ error: "Item não encontrado." });
 
@@ -195,24 +202,25 @@ app.delete("/carrinho/:itemId", authenticateToken, async (req, res) => {
       "DELETE FROM carrinho WHERE carrinho_id = ? AND usuario_id = ?",
       [id, req.user.usuarioId]
     );
+
     res.json({ message: "Item removido do carrinho com sucesso!" });
   } catch (err) {
     console.error("Erro ao remover item:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
-
 // Listar itens do carrinho
 app.get("/carrinho", authenticateToken, async (req, res) => {
   try {
     const [items] = await pool.query(
       `
-      SELECT c.carrinho_id, c.quantidade, i.nome, i.preco, img.caminho AS imagem_principal
+      SELECT c.carrinho_id, c.quantidade, i.instrumento_id, i.nome, i.preco, img.caminho AS imagem_principal
       FROM carrinho c
       JOIN instrumentos i ON c.instrumento_id = i.instrumento_id
       LEFT JOIN instrumento_imagens img
         ON i.instrumento_id = img.instrumento_id AND img.principal = TRUE
       WHERE c.usuario_id = ?
+      ORDER BY c.data_criacao DESC
     `,
       [req.user.usuarioId]
     );
@@ -227,12 +235,51 @@ app.get("/carrinho", authenticateToken, async (req, res) => {
 // Adicionar item ao carrinho
 app.post("/carrinho", authenticateToken, async (req, res) => {
   try {
-    const { instrumentoId, quantidade } = req.body;
-    if (!instrumentoId || !quantidade)
+    let { instrumentoId, quantidade } = req.body;
+
+    // Verifica se veio número válido
+    instrumentoId = Number(instrumentoId);
+    quantidade = Number(quantidade);
+
+    if (
+      !instrumentoId ||
+      instrumentoId <= 0 ||
+      !quantidade ||
+      quantidade <= 0
+    ) {
       return res
         .status(400)
-        .json({ error: "Instrumento e quantidade são obrigatórios." });
+        .json({ error: "Instrumento e quantidade válidos são obrigatórios." });
+    }
 
+    // Confirma que o instrumento existe
+    const [instr] = await pool.query(
+      "SELECT * FROM instrumentos WHERE instrumento_id = ?",
+      [instrumentoId]
+    );
+
+    if (instr.length === 0) {
+      return res.status(404).json({ error: "Instrumento não encontrado." });
+    }
+
+    // Verifica se o item já está no carrinho
+    const [existente] = await pool.query(
+      "SELECT * FROM carrinho WHERE usuario_id = ? AND instrumento_id = ?",
+      [req.user.usuarioId, instrumentoId]
+    );
+
+    if (existente.length > 0) {
+      // Atualiza quantidade
+      await pool.query(
+        "UPDATE carrinho SET quantidade = quantidade + ? WHERE carrinho_id = ?",
+        [quantidade, existente[0].carrinho_id]
+      );
+      return res
+        .status(200)
+        .json({ message: "Quantidade atualizada no carrinho!" });
+    }
+
+    // Adiciona novo item
     await pool.query(
       "INSERT INTO carrinho (usuario_id, instrumento_id, quantidade) VALUES (?, ?, ?)",
       [req.user.usuarioId, instrumentoId, quantidade]
@@ -244,7 +291,6 @@ app.post("/carrinho", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
-
 // Rota GET /buscar
 app.get("/buscar", async (req, res) => {
   try {
@@ -377,28 +423,41 @@ app.get("/instrumentos/:id", async (req, res) => {
 });
 
 // Adicionar novo instrumento + imagem (protegida)
-app.post("/instrumentos", authenticateToken, async (req, res) => {
-  try {
-    const { nome, categoria, marca, descricao, preco, estoque } = req.body;
-    if (!nome || !categoria || !marca || !preco || estoque == null)
-      return res
-        .status(400)
-        .json({ error: "Preencha todos os campos obrigatórios." });
+app.post(
+  "/instrumentos",
+  uploadInstrumento.single("imagem"),
+  async (req, res) => {
+    try {
+      const { nome, categoria, marca, preco, estoque, descricao } = req.body;
 
-    const [result] = await pool.query(
-      "INSERT INTO instrumentos (nome, categoria, marca, descricao, preco, estoque) VALUES (?, ?, ?, ?, ?, ?)",
-      [nome, categoria, marca, descricao || null, preco, estoque]
-    );
+      // Caminho da imagem, se existir
+      const imagem = req.file
+        ? `/uploads/instrumentos/${req.file.filename}`
+        : null;
 
-    res.status(201).json({
-      message: "Instrumento adicionado com sucesso!",
-      id: result.insertId,
-    });
-  } catch (err) {
-    console.error("Erro ao adicionar instrumento:", err);
-    res.status(500).json({ error: "Erro interno no servidor." });
+      // Inserir instrumento
+      const [result] = await pool.query(
+        "INSERT INTO instrumentos (nome, categoria, marca, preco, estoque, descricao) VALUES (?, ?, ?, ?, ?, ?)",
+        [nome, categoria, marca, preco, estoque || 0, descricao || null]
+      );
+
+      const instrumentoId = result.insertId;
+
+      // Inserir imagem principal na tabela de imagens
+      if (imagem) {
+        await pool.query(
+          "INSERT INTO instrumento_imagens (instrumento_id, caminho, principal) VALUES (?, ?, ?)",
+          [instrumentoId, imagem, true]
+        );
+      }
+
+      res.json({ success: true, id: instrumentoId, imagem });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erro ao cadastrar instrumento" });
+    }
   }
-});
+);
 
 // Atualizar instrumento + imagem (protegida)
 app.put("/instrumentos/:id", authenticateToken, async (req, res) => {
@@ -683,11 +742,20 @@ app.put("/pagamentos/:id", authenticateToken, async (req, res) => {
   }
 });
 
+app.post("/upload-perfil", uploadPerfil.single("foto"), async (req, res) => {
+  try {
+    const caminho = req.file ? `/uploads/perfis/${req.file.filename}` : null;
+    res.json({ success: true, caminho });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Upload de foto de perfil
 app.post(
   "/upload-foto",
   authenticateToken,
-  upload.single("foto"),
+  uploadPerfil.single("foto"),
   async (req, res) => {
     try {
       const usuarioId = req.user.usuarioId;
