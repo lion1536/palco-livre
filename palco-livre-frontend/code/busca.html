@@ -11,35 +11,58 @@
     <!-- Header -->
     <header class="cabecalho">
       <div id="svgs">
-        <a href="index.html">
-          <img
-            src="../images/image.png"
-            alt="Palco Livre"
-            width="120"
-            id="palcolivre"
-          />
-        </a>
+        <div id="buscar">
+          <a href="busca.html">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="65"
+              height="65"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="6"
+                stroke="white"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+              <line
+                x1="20.5"
+                y1="20.5"
+                x2="15.8"
+                y2="15.8"
+                stroke="white"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+        </div>
+        <a href="index.html"
+          ><img src="../images/image.png" alt="" width="120" id="palcolivre"
+        /></a>
         <div id="semnome">
-          <a href="login.html">
-            <img
-              src="../images/profile-svgrepo-com (1).svg"
-              alt="Perfil"
-              width="50"
-            />
-          </a>
-          <a href="Carrinho.html">
-            <img
+          <a href="login.html"
+            ><img src="../images/profile-svgrepo-com (1).svg" alt="" width="50"
+          /></a>
+          <a href="Carrinho.html"
+            ><img
               src="../images/shop-cart-svgrepo-com (2).svg"
-              alt="Carrinho"
+              alt=""
               width="50"
-            />
-          </a>
+          /></a>
         </div>
       </div>
     </header>
 
     <!-- Main / Busca -->
-    <main>
+    <main id="main">
       <div id="busca">
         <!-- Filtros de busca -->
         <div id="filtros" class="filtros-container">
@@ -60,52 +83,14 @@
             id="input-preco-max"
             placeholder="Preço máximo"
           />
-          <button id="btn-buscar">Buscar 🔍</button>
-
-          <!-- Filtros como botões -->
-          <div id="filtros-categoria">
-            <p>Categoria:</p>
-            <button class="filtro" data-categoria="Cordas">Cordas</button>
-            <button class="filtro" data-categoria="Sopro">Sopro</button>
-            <button class="filtro" data-categoria="Elétricos">Elétricos</button>
-            <button class="filtro" data-categoria="Acessórios">
-              Acessórios
-            </button>
-            <button class="filtro" data-categoria="Teclas">Teclas</button>
-            <button class="filtro" data-categoria="Percussão">Percussão</button>
-          </div>
-
-          <div id="filtros-preco">
-            <p>Preço:</p>
-            <button
-              class="filtro-preco"
-              data-preco-min="0"
-              data-preco-max="1000"
-            >
-              Até 1000
-            </button>
-            <button
-              class="filtro-preco"
-              data-preco-min="1001"
-              data-preco-max="5000"
-            >
-              1001 - 5000
-            </button>
-            <button
-              class="filtro-preco"
-              data-preco-min="5001"
-              data-preco-max="10000"
-            >
-              5001 - 10000
-            </button>
-          </div>
+          <button id="btn-buscar1">Buscar 🔍</button>
         </div>
 
         <!-- Texto de filtros aplicados -->
-        <p id="relacionados">Todos os instrumentos:</p>
+        <p id="relacionados1">Todos os instrumentos:</p>
 
         <!-- Container de resultados -->
-        <div id="container">
+        <div id="container1">
           <!-- Cards da busca aparecerão aqui -->
         </div>
       </div>
@@ -134,14 +119,14 @@
       import { adicionarAoCarrinho } from "./carrinho.js";
 
       document.addEventListener("DOMContentLoaded", () => {
-        const container = document.getElementById("container");
+        const container = document.getElementById("container1");
         const inputNome = document.getElementById("input-nome");
         const inputCategoria = document.getElementById("input-categoria");
         const inputMarca = document.getElementById("input-marca");
         const inputPrecoMin = document.getElementById("input-preco-min");
         const inputPrecoMax = document.getElementById("input-preco-max");
-        const relacionados = document.getElementById("relacionados");
-        const btnBuscar = document.getElementById("btn-buscar");
+        const relacionados = document.getElementById("relacionados1");
+        const btnBuscar = document.getElementById("btn-buscar1");
 
         async function abrirBusca() {
           const filtros = {};
@@ -216,7 +201,7 @@
           });
         }
 
-        btnBuscar.addEventListener("click", abrirBusca);
+        btnBuscar.addEventListener("click", abrirBusca());
         document.querySelectorAll("#filtros input").forEach((input) => {
           input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") abrirBusca();
