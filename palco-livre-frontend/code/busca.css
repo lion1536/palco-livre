@@ -1,4 +1,4 @@
-#container {
+#container1 {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
@@ -38,4 +38,50 @@
 .nenhum {
   font-size: 1.2em;
   color: red;
+}
+#busca {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+#relacionados1 {
+  text-align: center;
+  grid-column: 1 / 2;
+  grid-row: 2;
+}
+#filtros {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / 2;
+  grid-row: 1;
+  justify-content: center;
+  align-items: center;
+}
+#main {
+  height: 100vh;
+}
+#btn-buscar1 {
+  justify-self: center;
+  width: 300px;
+  border: none;
+  height: 2rem;
+  border-radius: 1rem;
+}
+#container1 {
+  grid-area: 1 / 2 / 3 / 4;
+}
+.card-instrumento {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  gap: 1rem;
+}
+.card-instrumento button {
+  border: none;
+  border-radius: 1rem;
+  height: 2rem;
+  color: white;
+  background-color: hsl(231, 66%, 30%);
 }
