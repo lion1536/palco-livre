@@ -4,12 +4,56 @@ import dotenv from "dotenv";
 import mysql from "mysql2/promise";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Regex para validar nome do arquivo e extensões seguras
+const imageRegex = /^[a-zA-Z0-9._-]+\.(jpg|jpeg|png|gif|webp)$/i;
+
+// Garante que a pasta existe
+const uploadDir = "uploads/perfis";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configuração do multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueName + path.extname(file.originalname).toLowerCase());
+  },
+});
+
+// Filtro de arquivo (valida nome + MIME type)
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const validMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+  if (!imageRegex.test(file.originalname)) {
+    return cb(new Error("Nome de arquivo inválido ou extensão não permitida."));
+  }
+
+  if (!validMimes.includes(file.mimetype)) {
+    return cb(new Error("Formato de arquivo inválido."));
+  }
+
+  cb(null, true);
+};
+
+const upload = multer({ storage });
+
+// Rota pública para acessar imagens
+app.use("/uploads", express.static("uploads"));
 
 // Middleware para aceitar JSON
 app.use(express.json());
@@ -652,6 +696,84 @@ app.put("/pagamentos/:id", authenticateToken, async (req, res) => {
   } catch (err) {
     console.error("Erro ao atualizar pagamento:", err);
     res.status(500).json({ error: "Erro interno no servidor." });
+  }
+});
+
+// Upload de foto de perfil
+app.post(
+  "/upload-foto",
+  authenticateToken,
+  upload.single("foto"),
+  async (req, res) => {
+    try {
+      const usuarioId = req.user.usuarioId;
+      if (!req.file) {
+        return res.status(400).json({ error: "Nenhuma foto enviada." });
+      }
+
+      const caminhoFoto = `/uploads/perfis/${req.file.filename}`;
+
+      // Marca qualquer outra como não principal
+      await pool.query(
+        "UPDATE usuario_fotos SET principal = FALSE WHERE usuario_id = ?",
+        [usuarioId]
+      );
+
+      // Insere a nova foto
+      await pool.query(
+        "INSERT INTO usuario_fotos (usuario_id, caminho, principal) VALUES (?, ?, TRUE)",
+        [usuarioId, caminhoFoto]
+      );
+
+      res.json({ success: true, foto: caminhoFoto });
+    } catch (error) {
+      console.error("Erro no upload de foto:", error);
+      res.status(500).json({ error: "Erro ao salvar foto." });
+    }
+  }
+);
+
+app.get("/foto-perfil", authenticateToken, async (req, res) => {
+  try {
+    const usuarioId = req.user.usuarioId;
+    const [rows] = await pool.query(
+      "SELECT caminho FROM usuario_fotos WHERE usuario_id = ? AND principal = TRUE LIMIT 1",
+      [usuarioId]
+    );
+
+    if (rows.length === 0) {
+      return res.json({ foto: null });
+    }
+
+    res.json({ foto: rows[0].caminho });
+  } catch (err) {
+    console.error("Erro ao buscar foto:", err);
+    res.status(500).json({ error: "Erro interno." });
+  }
+});
+
+// rota para buscar dados do usuário logado
+app.get("/me", authenticateToken, async (req, res) => {
+  try {
+    const usuarioId = req.user.usuarioId;
+
+    const [rows] = await pool.query(
+      "SELECT email, endereco FROM login WHERE usuario_id = ?",
+      [usuarioId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    res.json({
+      email: rows[0].email,
+      endereco: rows[0].endereco,
+      nome: rows[0].email.split("@")[0], // gera um "nome" simples a partir do email
+    });
+  } catch (err) {
+    console.error("Erro /me:", err);
+    res.status(500).json({ error: "Erro interno" });
   }
 });
 

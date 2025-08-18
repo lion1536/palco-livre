@@ -27,6 +27,16 @@ CREATE TABLE login (
     endereco VARCHAR(50)
 );
 
+CREATE TABLE usuario_fotos (
+    foto_id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    caminho VARCHAR(255) NOT NULL,
+    principal BOOLEAN DEFAULT TRUE,
+    data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES login(usuario_id) ON DELETE CASCADE
+);
+
+
 CREATE TABLE compras (
     compra_id INT PRIMARY KEY AUTO_INCREMENT,
     usuario_id INT NOT NULL,
