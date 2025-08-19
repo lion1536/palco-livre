@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perfil</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="perfil.css" />
   </head>
   <body>
     <!-- Cabeçalho igual ao login -->
@@ -62,44 +63,58 @@
         </div>
       </div>
     </header>
+    <main>
+      <!-- Área do perfil -->
+      <div id="perfil">
+        <div id="quadrado1">
+          <h1 id="h1n">Meu Perfil</h1>
 
-    <!-- Área do perfil -->
-    <div id="perfil">
-      <div id="quadrado">
-        <h1 id="h1n">Meu Perfil</h1>
+          <!-- Foto de perfil -->
+          <div id="fotoPerfil">
+            <img
+              id="imagemPerfil"
+              src="../images/profile-svgrepo-com (1).svg"
+              alt="Foto de Perfil"
+              width="150"
+              style="border-radius: 50%; margin-bottom: 15px"
+            />
+            <div id="fotos">
+              <label id="label1" for="uploadFoto">
+                <img
+                  src="/palco-livre-frontend/images/plus-circle-svgrepo-com (2) (1).svg"
+                  alt=""
+                  width="50"
+                />
+              </label>
+              <input type="file" id="uploadFoto" accept="image/*" />
+              <button class="btnLogin" id="btnUpload">Atualizar Foto</button>
+            </div>
+          </div>
 
-        <!-- Foto de perfil -->
-        <div id="fotoPerfil">
-          <img
-            id="imagemPerfil"
-            src="../images/profile-svgrepo-com (1).svg"
-            alt="Foto de Perfil"
-            width="150"
-            style="border-radius: 50%; margin-bottom: 15px"
-          />
-          <input type="file" id="uploadFoto" accept="image/*" />
-          <button class="btnLogin" id="btnUpload">Atualizar Foto</button>
-        </div>
+          <!-- Informações -->
+          <div id="dadosUsuario">
+            <p>
+              <strong>Nome:</strong> <span id="nomeUsuario">Carregando...</span>
+            </p>
+            <p>
+              <strong>Email:</strong>
+              <span id="emailUsuario">Carregando...</span>
+            </p>
+          </div>
 
-        <!-- Informações -->
-        <div id="dadosUsuario">
-          <p>
-            <strong>Nome:</strong> <span id="nomeUsuario">Carregando...</span>
-          </p>
-          <p>
-            <strong>Email:</strong> <span id="emailUsuario">Carregando...</span>
-          </p>
-        </div>
-
-        <!-- Botões -->
-        <div id="botoes">
-          <button class="btnLogin" style="background-color: red" id="btnLogout">
-            Sair da Conta
-          </button>
+          <!-- Botões -->
+          <div id="botoes">
+            <button
+              class="btnLogin"
+              style="background-color: red"
+              id="btnLogout"
+            >
+              Sair da Conta
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-
+    </main>
     <!-- Rodapé igual -->
     <footer>
       <div class="center">
@@ -118,8 +133,9 @@
           <button class="Sociais">Instrumentos Avançados</button>
         </div>
         <div class="ajuda">
-          <p>Precisa de Ajuda?</p>
-          <p>Entre em Contato!</p>
+          <p id="sum">Precisa de Ajuda?</p>
+          <p id="sum">Entre em Contato!</p>
+          <p id="apa">Fale Conosco!</p>
           <button class="Sociais">E-mail</button>
           <button class="Sociais">Telefone</button>
         </div>

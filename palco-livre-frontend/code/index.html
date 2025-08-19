@@ -72,9 +72,21 @@
     <div id="fundo">
       <div id="container-foto"></div>
       <img src="../images/sopro.png" alt="" class="des" />
-      <img src="../images/violãocerto.jpg" alt="" class="des" />
-      <img src="../images/batera.jpg" alt="" class="des" />
-      <img src="../images/teclado.jpg" alt="" class="des" />
+      <img
+        src="../images/close-up-de-violao-em-um-fundo-colorido-bonito.jpg"
+        alt=""
+        class="des"
+      />
+      <img
+        src="../images/parte-de-uma-bateria-no-escuro-em-um-fundo-desfocado-com-boke.jpg"
+        alt=""
+        class="des"
+      />
+      <img
+        src="../images/feche-de-teclas-de-piano-no-fundo-desfocado-com-bokeh.jpg"
+        alt=""
+        class="des"
+      />
       <div id="instrumentos-container" class="instrumentos-container">
         <!-- Os instrumentos serão carregados via JS -->
       </div>
@@ -96,8 +108,9 @@
           <button class="Sociais">Instrumentos Avançados</button>
         </div>
         <div class="ajuda">
-          <p>Precisa de Ajuda?</p>
-          <p>Entre em Contato!</p>
+          <p id="sum">Precisa de Ajuda?</p>
+          <p id="sum">Entre em Contato!</p>
+          <p id="apa">Fale Conosco!</p>
           <button class="Sociais">E-mail</button>
           <button class="Sociais">Telefone</button>
         </div>
@@ -105,7 +118,7 @@
     </footer>
 
     <script type="module">
-      import { adicionarAoCarrinho } from "./carrinho.js";
+      import { adicionarAoCarrinho } from "./carrinhoAPI.js";
 
       const token = localStorage.getItem("token");
       const container = document.getElementById("instrumentos-container");

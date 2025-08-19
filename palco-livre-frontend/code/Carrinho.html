@@ -85,8 +85,9 @@
           <button class="Sociais">Instrumentos Avançados</button>
         </div>
         <div class="ajuda">
-          <p>Precisa de Ajuda?</p>
-          <p>Entre em Contato!</p>
+          <p id="sum">Precisa de Ajuda?</p>
+          <p id="sum">Entre em Contato!</p>
+          <p id="apa">Fale Conosco!</p>
           <button class="Sociais">E-mail</button>
           <button class="Sociais">Telefone</button>
         </div>
@@ -98,7 +99,7 @@
         listarCarrinho,
         adicionarAoCarrinho,
         removerDoCarrinho,
-      } from "./carrinho.js";
+      } from "./carrinhoAPI.js";
 
       const token = localStorage.getItem("token");
       const container = document.getElementById("Carrinho");
@@ -106,7 +107,9 @@
       // Função para listar itens do carrinho
       async function mostrarCarrinho() {
         try {
-          const itens = await listarCarrinho(token);
+          const dados = await listarCarrinho(token);
+          console.log("DEBUG resposta da API /carrinho:", dados);
+          const itens = dados.carrinho || [];
           container.innerHTML = "";
 
           if (itens.length === 0) {
@@ -127,6 +130,7 @@
           <p>Preço: R$ ${item.preco}</p>
           <button class="remover" data-id="${item.carrinho_id}">Remover</button>
         </div>
+      </div> 
       `;
             container.appendChild(div);
           });

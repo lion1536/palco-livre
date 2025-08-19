@@ -61,7 +61,6 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  justify-content: center;
 }
 .redes p {
   text-align: center;
@@ -69,7 +68,6 @@ footer {
 .modelos {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 0.5rem;
 }
 .modelos p {
@@ -84,7 +82,6 @@ footer {
 .ajuda {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 0.5rem;
 }
 .ajuda p {
@@ -102,7 +99,7 @@ footer {
   justify-content: center;
   align-items: center;
   width: 35%;
-  height: 55%;
+  height: fit-content;
   background-color: hsl(231, 66%, 30%);
   color: white;
   padding: 2rem;
@@ -230,8 +227,8 @@ main {
 }
 #fundo {
   position: relative;
-  background-image: url(../images/sopro.png), url(../images/violãocerto.jpg),
-    url(../images/batera.jpg), url(../images/teclado.jpg);
+  background-image: url(../images/sopro.png), url(../images/close-up-de-violao-em-um-fundo-colorido-bonito.jpg),
+    url(../images/parte-de-uma-bateria-no-escuro-em-um-fundo-desfocado-com-boke.jpg), url(../images/feche-de-teclas-de-piano-no-fundo-desfocado-com-bokeh.jpg);
 
   background-size: 50% 50%, 50% 50%, 50% 50%, 50% 50%;
 
@@ -271,6 +268,14 @@ main {
 .des {
   display: none;
 }
+#sum {
+  margin-block: 0px;
+}
+#apa {
+  display: none;
+  text-align: center;
+  align-self: flex-start;
+}
 @media (max-width: 480px) {
   body {
     width: 100%;
@@ -302,8 +307,8 @@ main {
   }
   #instrumentos-container {
     display: grid;
-    grid-template-columns: repeat(1, 1fr); /* Exemplo: 3 colunas */
-    grid-template-rows: repeat(4, 1fr); /* Exemplo: 2 linhas */
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: repeat(4, 1fr);
     width: 100%;
     height: 100%;
     position: absolute;
@@ -318,5 +323,131 @@ main {
     width: 30%;
     justify-items: center;
     align-items: center;
+  }
+  #quadrado {
+    width: 80%;
+  }
+  #sum {
+    display: none;
+  }
+  #apa {
+    display: block;
+  }
+}
+@media (max-width: 576px) {
+  body {
+    width: 100%;
+  }
+  #dpscabe {
+    display: none;
+  }
+  #fundo {
+    background-image: none;
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+    border: 2px solid #ccc;
+  }
+  .des {
+    display: block;
+    width: 100%;
+    height: 300px;
+  }
+  #container-foto {
+    position: absolute;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    height: 100vh;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+  #instrumentos-container {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+  .instrumento img {
+    width: 50%;
+  }
+  .instrumento {
+    width: 30%;
+    justify-items: center;
+    align-items: center;
+  }
+  #quadrado {
+    width: 80%;
+  }
+  #sum {
+    display: none;
+  }
+  #apa {
+    display: block;
+  }
+}
+@media (max-width: 768px) {
+  body {
+    width: 100%;
+  }
+  #dpscabe {
+    display: none;
+  }
+  #fundo {
+    background-image: none;
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+    border: 2px solid #ccc;
+  }
+  .des {
+    display: block;
+    width: 100%;
+    height: 300px;
+  }
+  #container-foto {
+    position: absolute;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    height: 100vh;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+  #instrumentos-container {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+  .instrumento img {
+    width: 50%;
+  }
+  .instrumento {
+    width: 30%;
+    justify-items: center;
+    align-items: center;
+  }
+  #quadrado {
+    width: 80%;
+  }
+  #sum {
+    display: none;
+  }
+  #apa {
+    display: block;
+    align-self: flex-start;
   }
 }
