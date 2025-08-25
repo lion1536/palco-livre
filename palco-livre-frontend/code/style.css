@@ -227,8 +227,10 @@ main {
 }
 #fundo {
   position: relative;
-  background-image: url(../images/sopro.png), url(../images/close-up-de-violao-em-um-fundo-colorido-bonito.jpg),
-    url(../images/parte-de-uma-bateria-no-escuro-em-um-fundo-desfocado-com-boke.jpg), url(../images/feche-de-teclas-de-piano-no-fundo-desfocado-com-bokeh.jpg);
+  background-image: url(../images/freepik__retouch__32705.png),
+    url(../images/close-up-de-violao-em-um-fundo-colorido-bonito.jpg),
+    url(../images/parte-de-uma-bateria-no-escuro-em-um-fundo-desfocado-com-boke.jpg),
+    url(../images/feche-de-teclas-de-piano-no-fundo-desfocado-com-bokeh.jpg);
 
   background-size: 50% 50%, 50% 50%, 50% 50%, 50% 50%;
 
